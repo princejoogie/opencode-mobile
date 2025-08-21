@@ -1,16 +1,13 @@
 import {
-  Platform,
   TextInput,
   TouchableOpacity,
   Alert,
   ScrollView,
+  View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { router, Stack } from "expo-router";
-
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import { ThemedText } from "@/components/ui/themed-text";
 
 export default function HomeScreen() {
   const [serverUrl, setServerUrl] = useState("http://palkia:3000");
@@ -25,7 +22,7 @@ export default function HomeScreen() {
       const response = await fetch(`${serverUrl}/ports`);
       const data = await response.json();
       setPorts(data.ports || []);
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Failed to fetch ports");
       setPorts([]);
     } finally {
@@ -33,7 +30,7 @@ export default function HomeScreen() {
     }
   };
 
-  const pingServer = async () => {
+  const connectToServer = async () => {
     if (!serverUrl.trim()) {
       Alert.alert("Error", "Please enter a server URL");
       return;
@@ -57,7 +54,7 @@ export default function HomeScreen() {
         Alert.alert("Failed", "Server did not respond with { ok: true }");
         setPorts([]);
       }
-    } catch (error) {
+    } catch {
       setIsConnected(false);
       setPorts([]);
       Alert.alert("Error", "Failed to reach server");
@@ -89,52 +86,52 @@ export default function HomeScreen() {
           headerShown: true,
         }}
       />
-      <ThemedView className="flex-1">
-        <ScrollView className="flex-1 p-2">
-          <ThemedView className="gap-4">
-            <ThemedView className="gap-2 mb-2">
-              <ThemedText type="subtitle">Server Connection</ThemedText>
-              <TextInput
-                className="border border-blue-300 px-4 rounded text-base text-white pb-4 pt-2"
-                value={serverUrl}
-                onChangeText={setServerUrl}
-                placeholder="Enter server URL"
-              />
-              <TouchableOpacity
-                className={`p-3 rounded-lg items-center ${isChecking ? "opacity-50" : ""}`}
-                onPress={pingServer}
-                disabled={isChecking}
-              >
-                <ThemedText>
-                  {isChecking ? "Checking..." : "Ping Server"}
-                </ThemedText>
-              </TouchableOpacity>
+      <View className="flex-1">
+        <ScrollView className="flex-1 p-4">
+          <View className="gap-4">
+            <View className="gap-2 mb-2">
+              <ThemedText className="text-white">Server Url</ThemedText>
+              <View className="flex flex-row gap-2">
+                <TextInput
+                  className="border border-blue-300 px-4 rounded text-base text-white pb-4 pt-2 flex-1"
+                  value={serverUrl}
+                  onChangeText={setServerUrl}
+                  placeholder="Enter server URL"
+                />
+                <TouchableOpacity
+                  className={`flex items-cente justify-center px-4 rounded bg-green-700 items-center ${isChecking ? "opacity-50" : ""}`}
+                  onPress={connectToServer}
+                  disabled={isChecking}
+                >
+                  <ThemedText>
+                    {isChecking ? "Connecting..." : "Connect"}
+                  </ThemedText>
+                </TouchableOpacity>
+              </View>
               {isConnected !== null && (
-                <ThemedView className="p-2 items-center">
+                <View className="p-2 items-center">
                   <ThemedText>
                     {isConnected ? "✓ Connected" : "✗ Not Connected"}
                   </ThemedText>
-                </ThemedView>
+                </View>
               )}
-            </ThemedView>
+            </View>
 
             {isConnected && (
-              <ThemedView className="gap-2 mb-2">
-                <ThemedText type="subtitle">OpenCode Ports</ThemedText>
+              <View className="gap-2 mb-2">
+                <ThemedText>OpenCode Ports</ThemedText>
                 {isLoadingPorts ? (
                   <ThemedText>Loading ports...</ThemedText>
                 ) : ports.length > 0 ? (
-                  <ThemedView className="max-h-48">
-                    {ports.map(renderPortItem)}
-                  </ThemedView>
+                  <View className="max-h-48">{ports.map(renderPortItem)}</View>
                 ) : (
                   <ThemedText>No OpenCode ports found</ThemedText>
                 )}
-              </ThemedView>
+              </View>
             )}
-          </ThemedView>
+          </View>
         </ScrollView>
-      </ThemedView>
+      </View>
     </>
   );
 }
