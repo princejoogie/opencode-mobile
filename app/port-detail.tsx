@@ -1,4 +1,3 @@
-import { StyleSheet } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
@@ -14,35 +13,15 @@ export default function PortDetailScreen() {
           headerShown: true 
         }} 
       />
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.content}>
+      <ThemedView className="flex-1 p-4">
+        <ThemedView className="gap-6">
           <ThemedText type="title">Port Details</ThemedText>
-          <ThemedView style={styles.portContainer}>
+          <ThemedView className="p-4 rounded-lg items-center gap-2">
             <ThemedText type="subtitle">Port Number:</ThemedText>
-            <ThemedText style={styles.portNumber}>{port}</ThemedText>
+            <ThemedText className="text-3xl font-bold">{port}</ThemedText>
           </ThemedView>
         </ThemedView>
       </ThemedView>
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-  },
-  content: {
-    gap: 24,
-  },
-  portContainer: {
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    gap: 8,
-  },
-  portNumber: {
-    fontSize: 32,
-    fontWeight: 'bold',
-  },
-});

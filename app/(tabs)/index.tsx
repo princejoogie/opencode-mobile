@@ -1,10 +1,8 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { Platform, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { router } from 'expo-router';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 
@@ -69,7 +67,7 @@ export default function HomeScreen() {
   const renderPortItem = (port: number) => (
     <TouchableOpacity
       key={port}
-      style={styles.portItem}
+      className="flex-row justify-between items-center p-3 my-1"
       onPress={() => navigateToPortDetail(port)}
     >
       <ThemedText>Port {port}</ThemedText>
@@ -78,108 +76,59 @@ export default function HomeScreen() {
   );
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Server Connection</ThemedText>
-        <TextInput
-          style={styles.input}
-          value={serverUrl}
-          onChangeText={setServerUrl}
-          placeholder="Enter server URL"
-        />
-        <TouchableOpacity
-          style={[styles.button, isChecking && styles.buttonDisabled]}
-          onPress={pingServer}
-          disabled={isChecking}
-        >
-          <ThemedText>
-            {isChecking ? 'Checking...' : 'Ping Server'}
-          </ThemedText>
-        </TouchableOpacity>
-        {isConnected !== null && (
-          <ThemedView style={styles.statusContainer}>
-            <ThemedText>
-              {isConnected ? '✓ Connected' : '✗ Not Connected'}
-            </ThemedText>
-          </ThemedView>
-        )}
-      </ThemedView>
-      
-      {isConnected && (
-        <ThemedView style={styles.stepContainer}>
-          <ThemedText type="subtitle">OpenCode Ports</ThemedText>
-          {isLoadingPorts ? (
-            <ThemedText>Loading ports...</ThemedText>
-          ) : ports.length > 0 ? (
-            <ThemedView style={styles.portsList}>
-              {ports.map(renderPortItem)}
+    <SafeAreaView className="flex-1">
+      <ThemedView className="flex-1">
+        <ScrollView className="flex-1 p-8">
+          <ThemedView className="gap-4">
+            <ThemedView className="flex-row items-center gap-2">
+              <ThemedText type="title">OpenCode Server</ThemedText>
             </ThemedView>
-          ) : (
-            <ThemedText>No OpenCode ports found</ThemedText>
-          )}
-        </ThemedView>
-      )}
-    </ParallaxScrollView>
+            
+            <ThemedView className="gap-2 mb-2">
+              <ThemedText type="subtitle">Server Connection</ThemedText>
+              <TextInput
+                className="border border-gray-300 p-0 m-0 rounded-lg text-base text-white"
+                value={serverUrl}
+                onChangeText={setServerUrl}
+                placeholder="Enter server URL"
+              />
+              <TouchableOpacity
+                className={`p-3 rounded-lg items-center ${isChecking ? 'opacity-50' : ''}`}
+                onPress={pingServer}
+                disabled={isChecking}
+              >
+                <ThemedText>
+                  {isChecking ? 'Checking...' : 'Ping Server'}
+                </ThemedText>
+              </TouchableOpacity>
+              {isConnected !== null && (
+                <ThemedView className="p-2 items-center">
+                  <ThemedText>
+                    {isConnected ? '✓ Connected' : '✗ Not Connected'}
+                  </ThemedText>
+                </ThemedView>
+              )}
+            </ThemedView>
+            
+            {isConnected && (
+              <ThemedView className="gap-2 mb-2">
+                <ThemedText type="subtitle">OpenCode Ports</ThemedText>
+                {isLoadingPorts ? (
+                  <ThemedText>Loading ports...</ThemedText>
+                ) : ports.length > 0 ? (
+                  <ThemedView className="max-h-48">
+                    {ports.map(renderPortItem)}
+                  </ThemedView>
+                ) : (
+                  <ThemedText>No OpenCode ports found</ThemedText>
+                )}
+              </ThemedView>
+            )}
+          </ThemedView>
+        </ScrollView>
+      </ThemedView>
+    </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-  input: {
-    color: "#fff",
-    borderColor: "#fff",
-    borderWidth: 1,
-    padding: 12,
-    borderRadius: 8,
-    fontSize: 16,
-  },
-  button: {
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  statusContainer: {
-    padding: 8,
-    alignItems: 'center',
-  },
-  portsList: {
-    maxHeight: 200,
-  },
-  portItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 12,
-    marginVertical: 4,
-  },
-});
+
