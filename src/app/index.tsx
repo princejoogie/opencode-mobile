@@ -7,28 +7,40 @@ import {
 } from "react-native";
 import { useState } from "react";
 import { router, Stack } from "expo-router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ThemedText } from "@/components/ui/themed-text";
+import { api } from "@/lib/api";
 
 export default function HomeScreen() {
   const [serverUrl, setServerUrl] = useState("http://palkia:3000");
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
-  const [isChecking, setIsChecking] = useState(false);
-  const [ports, setPorts] = useState<number[]>([]);
-  const [isLoadingPorts, setIsLoadingPorts] = useState(false);
+  const queryClient = useQueryClient();
 
-  const fetchPorts = async () => {
-    setIsLoadingPorts(true);
-    try {
-      const response = await fetch(`${serverUrl}/ports`);
-      const data = await response.json();
-      setPorts(data.ports || []);
-    } catch {
-      Alert.alert("Error", "Failed to fetch ports");
-      setPorts([]);
-    } finally {
-      setIsLoadingPorts(false);
-    }
-  };
+  const { data: appsData, isLoading: isLoadingPorts } = useQuery({
+    queryKey: ["ports", serverUrl],
+    queryFn: () => api.getPorts(serverUrl),
+    enabled: isConnected === true,
+  });
+
+  const pingMutation = useMutation({
+    mutationFn: () => api.ping(serverUrl),
+    onSuccess: (data) => {
+      const connected = data.ok === true;
+      setIsConnected(connected);
+
+      if (connected) {
+        Alert.alert("Success", "Server is reachable!");
+        queryClient.invalidateQueries({ queryKey: ["ports", serverUrl] });
+      } else {
+        Alert.alert("Failed", "Server did not respond with { ok: true }");
+        setIsConnected(false);
+      }
+    },
+    onError: () => {
+      setIsConnected(false);
+      Alert.alert("Error", "Failed to reach server");
+    },
+  });
 
   const connectToServer = async () => {
     if (!serverUrl.trim()) {
@@ -36,44 +48,26 @@ export default function HomeScreen() {
       return;
     }
 
-    setIsChecking(true);
-    try {
-      const response = await fetch(`${serverUrl}/ping`, {
-        method: "GET",
-      });
-
-      const data = await response.json();
-      const connected = data.ok === true;
-      setIsConnected(connected);
-
-      if (connected) {
-        Alert.alert("Success", "Server is reachable!");
-        // Fetch ports after successful ping
-        await fetchPorts();
-      } else {
-        Alert.alert("Failed", "Server did not respond with { ok: true }");
-        setPorts([]);
-      }
-    } catch {
-      setIsConnected(false);
-      setPorts([]);
-      Alert.alert("Error", "Failed to reach server");
-    } finally {
-      setIsChecking(false);
-    }
+    pingMutation.mutate();
   };
+
+  const apps = appsData || [];
 
   const navigateToPortDetail = (port: number) => {
     router.push(`/port-detail?port=${port}`);
   };
 
-  const renderPortItem = (port: number) => (
+  const getProjectName = (rootPath: string) => {
+    return rootPath.split('/').pop() || 'Unknown Project';
+  };
+
+  const renderAppItem = (app: any) => (
     <TouchableOpacity
-      key={port}
+      key={app.port}
       className="flex-row justify-between items-center p-3 my-1"
-      onPress={() => navigateToPortDetail(port)}
+      onPress={() => navigateToPortDetail(app.port)}
     >
-      <ThemedText>Port {port}</ThemedText>
+      <ThemedText>{getProjectName(app.path.root)}</ThemedText>
       <ThemedText>›</ThemedText>
     </TouchableOpacity>
   );
@@ -99,12 +93,12 @@ export default function HomeScreen() {
                   placeholder="Enter server URL"
                 />
                 <TouchableOpacity
-                  className={`flex items-cente justify-center px-4 rounded bg-green-700 items-center ${isChecking ? "opacity-50" : ""}`}
+                  className={`flex items-cente justify-center px-4 rounded bg-green-700 items-center ${pingMutation.isPending ? "opacity-50" : ""}`}
                   onPress={connectToServer}
-                  disabled={isChecking}
+                  disabled={pingMutation.isPending}
                 >
                   <ThemedText>
-                    {isChecking ? "Connecting..." : "Connect"}
+                    {pingMutation.isPending ? "Connecting..." : "Connect"}
                   </ThemedText>
                 </TouchableOpacity>
               </View>
@@ -119,11 +113,11 @@ export default function HomeScreen() {
 
             {isConnected && (
               <View className="gap-2 mb-2">
-                <ThemedText>OpenCode Ports</ThemedText>
+                <ThemedText>Available sessions</ThemedText>
                 {isLoadingPorts ? (
                   <ThemedText>Loading ports...</ThemedText>
-                ) : ports.length > 0 ? (
-                  <View className="max-h-48">{ports.map(renderPortItem)}</View>
+                 ) : apps.length > 0 ? (
+                   <View className="max-h-48">{apps.map(renderAppItem)}</View>
                 ) : (
                   <ThemedText>No OpenCode ports found</ThemedText>
                 )}
