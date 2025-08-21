@@ -23,6 +23,12 @@ interface AppResponse {
   };
 }
 
+interface ToastRequest {
+  title: string;
+  message: string;
+  variant: "info" | "success" | "warning" | "error";
+}
+
 export const api = {
   ping: async (serverUrl: string): Promise<PingResponse> => {
     const response = await fetch(`${serverUrl}/ping`, {
@@ -61,15 +67,31 @@ export const api = {
   },
 
   getApp: async (serverUrl: string, port: number): Promise<AppResponse> => {
-    const url = new URL(serverUrl);
-    const host = url.hostname;
-    const protocol = url.protocol;
-
-    const apiUrl = `${protocol}//${host}:${port}/app`;
+    const apiUrl = `${serverUrl}/opencode/${port}/app`;
 
     console.log(`fetching app info: ${apiUrl}`);
     
     const response = await fetch(apiUrl);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+
+  showToast: async (serverUrl: string, port: number, toast: ToastRequest): Promise<boolean> => {
+    const apiUrl = `${serverUrl}/opencode/${port}/tui/show-toast`;
+
+    console.log(`showing toast: ${apiUrl}`);
+    
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(toast),
+    });
     
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);

@@ -1,8 +1,24 @@
-import { Text, View } from "react-native";
+import { View, TouchableOpacity, Alert } from "react-native";
 import { useLocalSearchParams, Stack } from "expo-router";
+import { api } from "@/lib/api";
+import { ThemedText } from "@/components/ui/themed-text";
 
 export default function PortDetailScreen() {
   const { port } = useLocalSearchParams<{ port: string }>();
+
+  const sendTestToast = async () => {
+    try {
+      const serverUrl = "http://palkia:3000";
+      await api.showToast(serverUrl, Number(port), {
+        title: "Test Toast",
+        message: "test toast from mobile app",
+        variant: "info",
+      });
+      Alert.alert("Success", "Toast sent successfully!");
+    } catch (error) {
+      Alert.alert("Error", `Failed to send toast: ${error}`);
+    }
+  };
 
   return (
     <>
@@ -12,13 +28,14 @@ export default function PortDetailScreen() {
           headerShown: true,
         }}
       />
-      <View className="flex-1 p-4">
-        <View className="gap-6">
-          <Text>Port Details</Text>
-          <View className="p-4 rounded-lg items-center gap-2">
-            <Text>Port Number:</Text>
-            <Text className="text-3xl font-bold">{port}</Text>
-          </View>
+      <View className="flex-1">
+        <View className="flex-1 p-4">
+          <TouchableOpacity
+            className="bg-blue-500 p-4 rounded-lg items-center"
+            onPress={sendTestToast}
+          >
+            <ThemedText className="font-semibold">Send Test Toast</ThemedText>
+          </TouchableOpacity>
         </View>
       </View>
     </>
