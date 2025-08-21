@@ -1,11 +1,10 @@
-import { View, Alert, ScrollView, StyleSheet } from "react-native";
+import { View, Alert, ScrollView } from "react-native";
 import { useLocalSearchParams, Stack, router } from "expo-router";
 import { api } from "@/lib/api";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedButton } from "@/components/ui/themed-button";
 import { ThemedView } from "@/components/ui/themed-view";
 import { useState, useEffect } from "react";
-import { TerminalColors } from "@/constants/Colors";
 
 interface SessionInfo {
   id: string;
@@ -62,25 +61,21 @@ export default function PortDetailScreen() {
   };
 
   const renderSessionItem = (session: SessionInfo, index: number) => (
-    <ThemedButton
-      key={session.id}
-      variant="ghost"
-      style={[
-        styles.sessionItem,
-        { minHeight: 0, paddingVertical: 0 },
-        index === sessions.length - 1 && { borderBottomWidth: 0 }
-      ]}
-      onPress={() => navigateToSession(session)}
-    >
-      <View style={styles.sessionContent}>
-        <View style={styles.sessionHeader}>
+       <ThemedButton
+       key={session.id}
+       variant="ghost"
+       className={`border-b border-terminal-border rounded-none px-3 py-1 bg-transparent items-stretch my-0 min-h-0 ${index === sessions.length - 1 ? 'border-b-0' : ''}`}
+       onPress={() => navigateToSession(session)}
+     >
+       <View className="flex-row justify-between items-start w-full">
+         <View className="flex-row flex-1 items-start gap-2">
           <ThemedText type="line-number">{(index + 1).toString().padStart(3, ' ')}</ThemedText>
-          <ThemedText type="muted" style={styles.sessionPrefix}>+</ThemedText>
-          <View style={styles.sessionInfo}>
-            <ThemedText style={styles.sessionTitle}>
-              {session.title || "Untitled Session"}
-            </ThemedText>
-            <View style={styles.sessionDetails}>
+           <ThemedText type="muted" className="mt-0.5">+</ThemedText>
+           <View className="flex-1 gap-0.5">
+             <ThemedText className="font-mono text-sm text-terminal-text">
+               {session.title || "Untitled Session"}
+             </ThemedText>
+             <View className="flex-row items-center">
               <ThemedText type="muted">ID: </ThemedText>
               <ThemedText type="info">{formatSessionId(session.id)}</ThemedText>
               {session.shared && (
@@ -104,39 +99,39 @@ export default function PortDetailScreen() {
         options={{
           title: `# Port ${port}`,
           headerShown: true,
-          headerStyle: {
-            backgroundColor: TerminalColors.bg,
-          },
-          headerTintColor: TerminalColors.green,
+           headerStyle: {
+             backgroundColor: '#1a1a1a',
+           },
+           headerTintColor: '#00ff00',
           headerTitleStyle: {
             fontFamily: "monospace",
             fontSize: 16,
           },
         }}
       />
-      <ThemedView style={styles.container}>
-        <ScrollView style={styles.scrollView}>
+      <ThemedView className="flex-1 bg-terminal-bg">
+        <ScrollView className="flex-1 px-4 py-4">
           <ThemedView variant="panel">
             <ThemedView variant="panel-header">
-              <View style={styles.headerContent}>
+               <View className="flex-row justify-between items-center">
                 <ThemedText type="subtitle">Sessions</ThemedText>
                 <ThemedText type="muted">{sessions.length} active</ThemedText>
               </View>
             </ThemedView>
             <ThemedView variant="panel-content" style={{ padding: 0 }}>
               {loading ? (
-                <View style={styles.loadingState}>
-                  <ThemedText type="muted">Loading sessions...</ThemedText>
-                </View>
+                 <View className="p-8 items-center">
+                   <ThemedText type="muted">Loading sessions...</ThemedText>
+                 </View>
               ) : sessions.length > 0 ? (
-                <ScrollView style={styles.sessionsList} nestedScrollEnabled>
+                 <ScrollView className="max-h-[500px]" nestedScrollEnabled>
                   {sessions.map(renderSessionItem)}
                 </ScrollView>
               ) : (
-                <View style={styles.emptyState}>
-                  <ThemedText type="muted">No active sessions found</ThemedText>
-                  <ThemedText type="dim">Start a new session to see it here</ThemedText>
-                </View>
+                 <View className="p-8 items-center gap-2">
+                   <ThemedText type="muted">No active sessions found</ThemedText>
+                   <ThemedText type="dim">Start a new session to see it here</ThemedText>
+                 </View>
               )}
             </ThemedView>
           </ThemedView>
@@ -146,69 +141,3 @@ export default function PortDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: TerminalColors.bg,
-  },
-  scrollView: {
-    flex: 1,
-    padding: 16,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sessionsList: {
-    maxHeight: 500,
-  },
-  sessionItem: {
-    borderBottomWidth: 1,
-    borderBottomColor: TerminalColors.border,
-    borderRadius: 0,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    backgroundColor: 'transparent',
-    alignItems: 'stretch',
-    marginVertical: 0,
-    minHeight: 0,
-  },
-  sessionContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    width: '100%',
-  },
-  sessionHeader: {
-    flexDirection: 'row',
-    flex: 1,
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  sessionPrefix: {
-    marginTop: 1,
-  },
-  sessionInfo: {
-    flex: 1,
-    gap: 1,
-  },
-  sessionTitle: {
-    fontFamily: 'monospace',
-    fontSize: 14,
-    color: TerminalColors.text,
-  },
-  sessionDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  loadingState: {
-    padding: 32,
-    alignItems: 'center',
-  },
-  emptyState: {
-    padding: 32,
-    alignItems: 'center',
-    gap: 8,
-  },
-});

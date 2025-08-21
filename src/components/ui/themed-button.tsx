@@ -1,82 +1,68 @@
-import { StyleSheet, TouchableOpacity, TouchableOpacityProps } from "react-native";
+import { TouchableOpacity, TouchableOpacityProps } from "react-native";
 import { ThemedText, ThemedTextProps } from "./themed-text";
-import { TerminalColors } from "@/constants/Colors";
 
 export type ThemedButtonProps = TouchableOpacityProps & {
   variant?: "primary" | "secondary" | "ghost" | "destructive" | "terminal";
   textProps?: ThemedTextProps;
   children: React.ReactNode;
+  className?: string;
 };
 
 export function ThemedButton({
-  style,
   variant = "terminal",
   textProps,
   children,
+  className = "",
   ...rest
 }: ThemedButtonProps) {
-  const getVariantStyle = () => {
+  const getVariantClassName = () => {
     switch (variant) {
       case "primary":
-        return {
-          backgroundColor: TerminalColors.green,
-          borderColor: TerminalColors.green,
-          borderWidth: 1,
-        };
+        return "bg-terminal-green border border-terminal-green";
       case "secondary":
-        return {
-          backgroundColor: TerminalColors.bgSecondary,
-          borderColor: TerminalColors.border,
-          borderWidth: 1,
-        };
+        return "bg-terminal-bg-secondary border border-terminal-border";
       case "ghost":
-        return {
-          backgroundColor: "transparent",
-          borderColor: "transparent",
-          borderWidth: 1,
-        };
+        return "bg-transparent border border-transparent";
       case "destructive":
-        return {
-          backgroundColor: TerminalColors.red,
-          borderColor: TerminalColors.red,
-          borderWidth: 1,
-        };
+        return "bg-terminal-red border border-terminal-red";
       case "terminal":
       default:
-        return {
-          backgroundColor: TerminalColors.bgSecondary,
-          borderColor: TerminalColors.border,
-          borderWidth: 1,
-        };
+        return "bg-terminal-bg-secondary border border-terminal-border";
     }
   };
 
-  const getTextColor = () => {
+  const getTextType = () => {
     switch (variant) {
       case "primary":
-        return TerminalColors.bg;
+        return "default";
       case "destructive":
-        return TerminalColors.text;
+        return "default";
       default:
-        return TerminalColors.text;
+        return "default";
+    }
+  };
+
+  const getTextClassName = () => {
+    switch (variant) {
+      case "primary":
+        return "text-terminal-bg";
+      case "destructive":
+        return "text-terminal-text";
+      default:
+        return "text-terminal-text";
     }
   };
 
   return (
     <TouchableOpacity
-      style={[
-        styles.base,
-        getVariantStyle(),
-        style,
-      ]}
+      className={`px-4 py-2 items-center justify-center min-h-8 ${getVariantClassName()} ${className}`}
       {...rest}
     >
       {typeof children === "string" ? (
         <ThemedText
-          style={[
-            styles.text,
-            { color: getTextColor() },
-          ]}
+           // keep within union; default is valid
+          type={getTextType() as ThemedTextProps["type"]}
+          className={`text-sm font-mono text-center ${getTextClassName()}`}
           {...textProps}
         >
           {children}
@@ -87,19 +73,3 @@ export function ThemedButton({
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  base: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 0,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 32,
-  },
-  text: {
-    fontSize: 14,
-    fontFamily: "monospace",
-    textAlign: "center",
-  },
-});

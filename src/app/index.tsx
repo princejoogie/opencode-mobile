@@ -1,10 +1,4 @@
-import {
-  TextInput,
-  Alert,
-  ScrollView,
-  View,
-  StyleSheet,
-} from "react-native";
+import { TextInput, Alert, ScrollView, View } from "react-native";
 import { useState } from "react";
 import { router, Stack } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -12,7 +6,6 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedButton } from "@/components/ui/themed-button";
 import { ThemedView } from "@/components/ui/themed-view";
 import { api } from "@/lib/api";
-import { TerminalColors } from "@/constants/Colors";
 
 export default function HomeScreen() {
   const [serverUrl, setServerUrl] = useState("http://palkia:3000");
@@ -61,24 +54,21 @@ export default function HomeScreen() {
   };
 
   const getProjectName = (rootPath: string) => {
-    return rootPath.split('/').pop() || 'Unknown Project';
+    return rootPath.split("/").pop() || "Unknown Project";
   };
 
   const renderAppItem = (app: any, index: number) => (
     <ThemedButton
       key={app.port}
       variant="ghost"
-      style={[
-        styles.sessionItem,
-        index === apps.length - 1 && { borderBottomWidth: 0 }
-      ]}
+       className={`border-b border-terminal-border rounded-none px-4 py-3 bg-transparent ${index === apps.length - 1 ? 'border-b-0' : ''}`}
       onPress={() => navigateToPortDetail(app.port)}
     >
-      <View style={styles.sessionItemContent}>
-        <View style={styles.sessionInfo}>
-          <ThemedText type="dim" style={styles.lineNumber}>
-            {String(app.port).padStart(4, ' ')}
-          </ThemedText>
+       <View className="flex-row justify-between items-center w-full">
+         <View className="flex-row items-center gap-3">
+           <ThemedText type="dim" className="font-mono text-xs min-w-10 text-right">
+             {String(app.port).padStart(4, " ")}
+           </ThemedText>
           <ThemedText>{getProjectName(app.path.root)}</ThemedText>
         </View>
         <ThemedText type="muted">›</ThemedText>
@@ -92,38 +82,37 @@ export default function HomeScreen() {
         options={{
           title: "# OpenCode Terminal",
           headerShown: true,
-          headerStyle: {
-            backgroundColor: TerminalColors.bg,
-          },
-          headerTintColor: TerminalColors.green,
+           headerStyle: {
+             backgroundColor: '#1a1a1a',
+           },
+           headerTintColor: '#00ff00',
           headerTitleStyle: {
             fontFamily: "monospace",
             fontSize: 16,
           },
         }}
       />
-      <ThemedView style={styles.container}>
-        <ScrollView style={styles.scrollView}>
-          <ThemedView variant="panel" style={styles.connectionPanel}>
+      <ThemedView className="flex-1 bg-bg">
+        <ScrollView className="flex-1 px-4 py-4">
+          <ThemedView variant="panel" className="mb-4">
             <ThemedView variant="panel-header">
               <ThemedText type="subtitle">Connection</ThemedText>
             </ThemedView>
-            <ThemedView variant="panel-content">
-              <ThemedText type="muted" style={styles.label}>Server URL:</ThemedText>
-              <View style={styles.inputRow}>
-                <TextInput
-                  style={[styles.input, { flex: 1 }]}
-                  value={serverUrl}
-                  onChangeText={setServerUrl}
-                  placeholder="Enter server URL"
-                  placeholderTextColor={TerminalColors.textDim}
-                />
+            <ThemedView variant="panel-content" className="p-4">
+              <ThemedText type="muted" className="mb-2">
+                Server URL:
+              </ThemedText>
+               <View className="flex-row gap-3 mb-3">
+                 <TextInput
+                   className="flex-1 bg-terminal-bg-tertiary border border-terminal-border text-terminal-text font-mono text-sm px-3 py-2 rounded-none"
+                   value={serverUrl}
+                   onChangeText={setServerUrl}
+                   placeholder="Enter server URL"
+                   placeholderTextColor="#666666"
+                 />
                 <ThemedButton
                   variant="primary"
-                  style={[
-                    styles.connectButton,
-                    { opacity: pingMutation.isPending ? 0.5 : 1 }
-                  ]}
+                   className={`min-w-24 ${pingMutation.isPending ? 'opacity-50' : 'opacity-100'}`}
                   onPress={connectToServer}
                   disabled={pingMutation.isPending}
                 >
@@ -131,7 +120,7 @@ export default function HomeScreen() {
                 </ThemedButton>
               </View>
               {isConnected !== null && (
-                <View style={styles.statusContainer}>
+                 <View className="items-center pt-2">
                   <ThemedText type={isConnected ? "success" : "error"}>
                     {isConnected ? "✓ Connected" : "✗ Connection Failed"}
                   </ThemedText>
@@ -141,25 +130,29 @@ export default function HomeScreen() {
           </ThemedView>
 
           {isConnected && (
-            <ThemedView variant="panel" style={styles.sessionsPanel}>
+             <ThemedView variant="panel" className="flex-1">
               <ThemedView variant="panel-header">
                 <ThemedText type="subtitle">Active Sessions</ThemedText>
                 <ThemedText type="muted">{apps.length} found</ThemedText>
               </ThemedView>
               <ThemedView variant="panel-content" style={{ padding: 0 }}>
                 {isLoadingPorts ? (
-                  <View style={styles.emptyState}>
-                    <ThemedText type="muted">Scanning ports...</ThemedText>
-                  </View>
+                   <View className="p-8 items-center">
+                     <ThemedText type="muted">Scanning ports...</ThemedText>
+                   </View>
                 ) : apps.length > 0 ? (
-                  <ScrollView style={styles.sessionsList} nestedScrollEnabled>
+                   <ScrollView className="max-h-[300px]" nestedScrollEnabled>
                     {apps.map(renderAppItem)}
                   </ScrollView>
                 ) : (
-                  <View style={styles.emptyState}>
-                    <ThemedText type="muted">No active sessions found</ThemedText>
-                    <ThemedText type="dim">Start a development server to see it here</ThemedText>
-                  </View>
+                   <View className="p-8 items-center gap-2">
+                     <ThemedText type="muted">
+                       No active sessions found
+                     </ThemedText>
+                     <ThemedText type="dim">
+                       Start a development server to see it here
+                     </ThemedText>
+                   </View>
                 )}
               </ThemedView>
             </ThemedView>
@@ -170,78 +163,3 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: TerminalColors.bg,
-  },
-  scrollView: {
-    flex: 1,
-    padding: 16,
-  },
-  connectionPanel: {
-    marginBottom: 16,
-  },
-  sessionsPanel: {
-    flex: 1,
-  },
-  label: {
-    marginBottom: 8,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-  },
-  input: {
-    backgroundColor: TerminalColors.bgTertiary,
-    borderWidth: 1,
-    borderColor: TerminalColors.border,
-    color: TerminalColors.text,
-    fontFamily: 'monospace',
-    fontSize: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 0,
-  },
-  connectButton: {
-    minWidth: 100,
-  },
-  statusContainer: {
-    alignItems: 'center',
-    paddingTop: 8,
-  },
-  sessionsList: {
-    maxHeight: 300,
-  },
-  sessionItem: {
-    borderBottomWidth: 1,
-    borderBottomColor: TerminalColors.border,
-    borderRadius: 0,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: 'transparent',
-  },
-  sessionItemContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-  },
-  sessionInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  lineNumber: {
-    fontFamily: 'monospace',
-    fontSize: 12,
-    minWidth: 40,
-    textAlign: 'right',
-  },
-  emptyState: {
-    padding: 32,
-    alignItems: 'center',
-    gap: 8,
-  },
-});

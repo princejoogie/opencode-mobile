@@ -1,130 +1,50 @@
-import { StyleSheet, Text, TextProps } from "react-native";
-import { TerminalColors } from "@/constants/Colors";
+import { Text, TextProps } from "react-native";
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
   type?: "default" | "title" | "subtitle" | "muted" | "dim" | "link" | "success" | "error" | "warning" | "info" | "line-number";
+  className?: string;
 };
 
 export function ThemedText({
-  style,
   lightColor,
   darkColor,
   type = "default",
+  className = "",
   ...rest
 }: ThemedTextProps) {
-  const getTypeStyle = () => {
+  const getTypeClassName = () => {
     switch (type) {
       case "title":
-        return {
-          ...styles.title,
-          color: TerminalColors.text,
-        };
+        return "text-lg leading-6 font-mono font-bold text-terminal-text";
       case "subtitle":
-        return {
-          ...styles.subtitle,
-          color: TerminalColors.text,
-        };
+        return "text-base leading-5 font-mono font-semibold text-terminal-text";
       case "muted":
-        return {
-          ...styles.muted,
-          color: TerminalColors.textMuted,
-        };
+        return "text-sm leading-5 font-mono text-terminal-text-muted";
       case "dim":
-        return {
-          ...styles.dim,
-          color: TerminalColors.textDim,
-        };
+        return "text-xs leading-4 font-mono text-terminal-text-dim";
       case "link":
-        return {
-          ...styles.link,
-          color: TerminalColors.blue,
-        };
+        return "text-sm leading-5 font-mono underline text-terminal-blue";
       case "success":
-        return {
-          ...styles.default,
-          color: TerminalColors.green,
-        };
+        return "text-sm leading-5 font-mono text-terminal-green";
       case "error":
-        return {
-          ...styles.default,
-          color: TerminalColors.red,
-        };
+        return "text-sm leading-5 font-mono text-terminal-red";
       case "warning":
-        return {
-          ...styles.default,
-          color: TerminalColors.yellow,
-        };
+        return "text-sm leading-5 font-mono text-terminal-yellow";
       case "info":
-        return {
-          ...styles.default,
-          color: TerminalColors.blue,
-        };
+        return "text-sm leading-5 font-mono text-terminal-blue";
       case "line-number":
-        return {
-          ...styles.lineNumber,
-          color: TerminalColors.textDim,
-        };
+        return "text-xs leading-4 font-mono text-right min-w-12 pr-2 text-terminal-text-dim";
       default:
-        return {
-          ...styles.default,
-          color: lightColor || darkColor || TerminalColors.text,
-        };
+        return "text-sm leading-5 font-mono text-terminal-text";
     }
   };
 
   return (
     <Text
-      style={[
-        getTypeStyle(),
-        style,
-      ]}
+      className={`${getTypeClassName()} ${className}`}
       {...rest}
     />
   );
 }
-
-const styles = StyleSheet.create({
-  default: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontFamily: "monospace",
-  },
-  title: {
-    fontSize: 18,
-    lineHeight: 24,
-    fontFamily: "monospace",
-    fontWeight: "bold",
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 22,
-    fontFamily: "monospace",
-    fontWeight: "600",
-  },
-  muted: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontFamily: "monospace",
-  },
-  dim: {
-    fontSize: 12,
-    lineHeight: 18,
-    fontFamily: "monospace",
-  },
-  link: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontFamily: "monospace",
-    textDecorationLine: "underline",
-  },
-  lineNumber: {
-    fontSize: 12,
-    lineHeight: 18,
-    fontFamily: "monospace",
-    textAlign: "right",
-    minWidth: 48,
-    paddingRight: 8,
-  },
-});

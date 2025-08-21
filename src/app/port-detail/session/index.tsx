@@ -1,10 +1,9 @@
-import { Alert, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, ScrollView, View } from "react-native";
 import { useLocalSearchParams, Stack } from "expo-router";
 import { api, type Message, type MessagePart, type ToolPart } from "@/lib/api";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { useState, useEffect, useCallback } from "react";
-import { TerminalColors } from "@/constants/Colors";
 
 export default function SessionScreen() {
   const { port, sessionId, title } = useLocalSearchParams<{
@@ -124,10 +123,10 @@ export default function SessionScreen() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "complete": return TerminalColors.green;
-      case "error": return TerminalColors.red;
-      case "streaming": return TerminalColors.yellow;
-      default: return TerminalColors.textMuted;
+      case "complete": return '#00ff00';
+      case "error": return '#ff0000';
+      case "streaming": return '#ffff00';
+      default: return '#666666';
     }
   };
 
@@ -143,54 +142,54 @@ export default function SessionScreen() {
         options={{
           title: `# ${decodedTitle}`,
           headerShown: true,
-          headerStyle: {
-            backgroundColor: TerminalColors.bg,
-          },
-          headerTintColor: TerminalColors.green,
+           headerStyle: {
+             backgroundColor: '#1a1a1a',
+           },
+           headerTintColor: '#00ff00',
           headerTitleStyle: {
             fontFamily: "monospace",
             fontSize: 16,
           },
         }}
       />
-      <ThemedView style={styles.container}>
-        <ScrollView style={styles.scrollView}>
-          <ThemedView variant="panel" style={styles.sessionPanel}>
+       <ThemedView className="flex-1 bg-terminal-bg">
+         <ScrollView className="flex-1 p-4">
+           <ThemedView variant="panel" className="flex-1">
             <ThemedView variant="panel-header">
               <ThemedText type="subtitle">Session Log</ThemedText>
               <ThemedText type="muted">{messages.length} messages</ThemedText>
             </ThemedView>
             <ThemedView variant="panel-content" style={{ padding: 0 }}>
-              <ThemedView variant="code-block" style={styles.sessionInfo}>
-                <View style={styles.infoRow}>
-                  <ThemedText type="muted">Session ID:</ThemedText>
-                  <ThemedText type="info">{sessionId}</ThemedText>
-                </View>
-                <View style={styles.infoRow}>
-                  <ThemedText type="muted">Port:</ThemedText>
-                  <ThemedText type="info">{port}</ThemedText>
-                </View>
+               <ThemedView variant="code-block" className="mb-4">
+                 <View className="flex-row gap-2 mb-1">
+                   <ThemedText type="muted">Session ID:</ThemedText>
+                   <ThemedText type="info">{sessionId}</ThemedText>
+                 </View>
+                 <View className="flex-row gap-2 mb-1">
+                   <ThemedText type="muted">Port:</ThemedText>
+                   <ThemedText type="info">{port}</ThemedText>
+                 </View>
               </ThemedView>
 
               {loading ? (
-                <View style={styles.loadingState}>
-                  <ThemedText type="muted">Loading messages...</ThemedText>
-                </View>
+                 <View className="p-8 items-center">
+                   <ThemedText type="muted">Loading messages...</ThemedText>
+                 </View>
               ) : messages.length === 0 ? (
-                <View style={styles.emptyState}>
-                  <ThemedText type="muted">No messages in this session</ThemedText>
-                  <ThemedText type="dim">Messages will appear here when the session is active</ThemedText>
-                </View>
+                 <View className="p-8 items-center gap-2">
+                   <ThemedText type="muted">No messages in this session</ThemedText>
+                   <ThemedText type="dim">Messages will appear here when the session is active</ThemedText>
+                 </View>
               ) : (
-                <ScrollView style={styles.messagesList} nestedScrollEnabled>
+                 <ScrollView className="max-h-[600px]" nestedScrollEnabled>
                   {messages.map((message, index) => {
                     const status = getMessageStatus(message);
                     const isUser = message.info.role === "user";
                     
                     return (
-                      <View key={message.info.id} style={styles.messageContainer}>
-                        <View style={styles.messageHeader}>
-                          <View style={styles.messageHeaderLeft}>
+                       <View key={message.info.id} className="mb-4">
+                         <View className="flex-row justify-between items-center mb-1">
+                           <View className="flex-row items-center gap-2">
                             <ThemedText type="line-number">
                               {String(index + 1).padStart(3, ' ')}
                             </ThemedText>
@@ -201,7 +200,7 @@ export default function SessionScreen() {
                               {isUser ? "user" : "assistant"}
                             </ThemedText>
                           </View>
-                          <View style={styles.statusBadge}>
+                           <View className="px-2 py-1">
                             <ThemedText 
                               type="dim" 
                               style={{ color: getStatusColor(status), fontSize: 10 }}
@@ -211,13 +210,13 @@ export default function SessionScreen() {
                           </View>
                         </View>
                         
-                        <ThemedView variant="code-block" style={styles.messageContent}>
-                          <ThemedText style={styles.messageText}>
-                            {getMessagePreview(message.parts)}
-                          </ThemedText>
-                          <ThemedText type="dim" style={styles.messageTime}>
-                            {formatTime(message.info.time.created)}
-                          </ThemedText>
+                         <ThemedView variant="code-block" className="pl-14">
+                           <ThemedText className="font-mono text-xs leading-[18px] text-terminal-text mb-2">
+                             {getMessagePreview(message.parts)}
+                           </ThemedText>
+                           <ThemedText type="dim" className="text-[10px]">
+                             {formatTime(message.info.time.created)}
+                           </ThemedText>
                         </ThemedView>
                       </View>
                     );
@@ -232,68 +231,5 @@ export default function SessionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: TerminalColors.bg,
-  },
-  scrollView: {
-    flex: 1,
-    padding: 16,
-  },
-  sessionPanel: {
-    flex: 1,
-  },
-  sessionInfo: {
-    marginBottom: 16,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 4,
-  },
-  messagesList: {
-    maxHeight: 600,
-  },
-  messageContainer: {
-    marginBottom: 16,
-  },
-  messageHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  messageHeaderLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  messageContent: {
-    paddingLeft: 56, // Align with message content
-  },
-  messageText: {
-    fontFamily: 'monospace',
-    fontSize: 12,
-    lineHeight: 18,
-    color: TerminalColors.text,
-    marginBottom: 8,
-  },
-  messageTime: {
-    fontSize: 10,
-  },
-  loadingState: {
-    padding: 32,
-    alignItems: 'center',
-  },
-  emptyState: {
-    padding: 32,
-    alignItems: 'center',
-    gap: 8,
-  },
-});
+
 
