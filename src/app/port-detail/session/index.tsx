@@ -1,9 +1,10 @@
-import { Alert, ScrollView } from "react-native";
+import { Alert, ScrollView, StyleSheet, View } from "react-native";
 import { useLocalSearchParams, Stack } from "expo-router";
 import { api, type Message, type MessagePart, type ToolPart } from "@/lib/api";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { useState, useEffect, useCallback } from "react";
+import { TerminalColors } from "@/constants/Colors";
 
 export default function SessionScreen() {
   const { port, sessionId, title } = useLocalSearchParams<{
@@ -54,6 +55,7 @@ export default function SessionScreen() {
       setLoading(false);
     }
   }, [port, sessionId]);
+  
   useEffect(() => {
     if (sessionId && port) {
       loadMessages();
@@ -61,7 +63,8 @@ export default function SessionScreen() {
   }, [sessionId, port, loadMessages]);
 
   const formatTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString();
+    return new Date(timestamp).toLocaleDateString() + " " + 
+           new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   const getMessageStatus = (
@@ -99,7 +102,7 @@ export default function SessionScreen() {
         const content = part.text;
         if (content && content.trim()) {
           return (
-            content.substring(0, 500) + (content.length > 500 ? "..." : "")
+            content.substring(0, 300) + (content.length > 300 ? "..." : "")
           );
         }
       }
@@ -109,7 +112,7 @@ export default function SessionScreen() {
         const content = part.state.output;
         if (content && content.trim()) {
           return (
-            content.substring(0, 500) + (content.length > 500 ? "..." : "")
+            content.substring(0, 300) + (content.length > 300 ? "..." : "")
           );
         }
       }
@@ -119,134 +122,178 @@ export default function SessionScreen() {
     return `${parts.length} part(s): ${parts.map((p) => p.type).join(", ")}`;
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "complete": return TerminalColors.green;
+      case "error": return TerminalColors.red;
+      case "streaming": return TerminalColors.yellow;
+      default: return TerminalColors.textMuted;
+    }
+  };
+
+  const getRolePrefix = (role: string) => {
+    return role === "user" ? ">" : "$";
+  };
+
   const decodedTitle = title ? decodeURIComponent(title) : "Untitled Session";
 
   return (
     <>
       <Stack.Screen
         options={{
-          title: decodedTitle,
+          title: `# ${decodedTitle}`,
           headerShown: true,
+          headerStyle: {
+            backgroundColor: TerminalColors.bg,
+          },
+          headerTintColor: TerminalColors.green,
+          headerTitleStyle: {
+            fontFamily: "monospace",
+            fontSize: 16,
+          },
         }}
       />
-      <ScrollView className="flex-1 p-4">
-        <ThemedView style={{ gap: 16 }}>
-          <ThemedView variant="card">
-            <ThemedText style={{ fontWeight: "600", marginBottom: 8 }}>
-              Session Details
-            </ThemedText>
-            <ThemedText style={{ fontSize: 12, opacity: 0.7, marginBottom: 4 }}>
-              ID: {sessionId}
-            </ThemedText>
-            <ThemedText style={{ fontSize: 12, opacity: 0.7 }}>
-              Port: {port}
-            </ThemedText>
+      <ThemedView style={styles.container}>
+        <ScrollView style={styles.scrollView}>
+          <ThemedView variant="panel" style={styles.sessionPanel}>
+            <ThemedView variant="panel-header">
+              <ThemedText type="subtitle">Session Log</ThemedText>
+              <ThemedText type="muted">{messages.length} messages</ThemedText>
+            </ThemedView>
+            <ThemedView variant="panel-content" style={{ padding: 0 }}>
+              <ThemedView variant="code-block" style={styles.sessionInfo}>
+                <View style={styles.infoRow}>
+                  <ThemedText type="muted">Session ID:</ThemedText>
+                  <ThemedText type="info">{sessionId}</ThemedText>
+                </View>
+                <View style={styles.infoRow}>
+                  <ThemedText type="muted">Port:</ThemedText>
+                  <ThemedText type="info">{port}</ThemedText>
+                </View>
+              </ThemedView>
+
+              {loading ? (
+                <View style={styles.loadingState}>
+                  <ThemedText type="muted">Loading messages...</ThemedText>
+                </View>
+              ) : messages.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <ThemedText type="muted">No messages in this session</ThemedText>
+                  <ThemedText type="dim">Messages will appear here when the session is active</ThemedText>
+                </View>
+              ) : (
+                <ScrollView style={styles.messagesList} nestedScrollEnabled>
+                  {messages.map((message, index) => {
+                    const status = getMessageStatus(message);
+                    const isUser = message.info.role === "user";
+                    
+                    return (
+                      <View key={message.info.id} style={styles.messageContainer}>
+                        <View style={styles.messageHeader}>
+                          <View style={styles.messageHeaderLeft}>
+                            <ThemedText type="line-number">
+                              {String(index + 1).padStart(3, ' ')}
+                            </ThemedText>
+                            <ThemedText type={isUser ? "info" : "success"}>
+                              {getRolePrefix(message.info.role)}
+                            </ThemedText>
+                            <ThemedText type={isUser ? "info" : "success"}>
+                              {isUser ? "user" : "assistant"}
+                            </ThemedText>
+                          </View>
+                          <View style={styles.statusBadge}>
+                            <ThemedText 
+                              type="dim" 
+                              style={{ color: getStatusColor(status), fontSize: 10 }}
+                            >
+                              [{status}]
+                            </ThemedText>
+                          </View>
+                        </View>
+                        
+                        <ThemedView variant="code-block" style={styles.messageContent}>
+                          <ThemedText style={styles.messageText}>
+                            {getMessagePreview(message.parts)}
+                          </ThemedText>
+                          <ThemedText type="dim" style={styles.messageTime}>
+                            {formatTime(message.info.time.created)}
+                          </ThemedText>
+                        </ThemedView>
+                      </View>
+                    );
+                  })}
+                </ScrollView>
+              )}
+            </ThemedView>
           </ThemedView>
-
-          <ThemedView>
-            <ThemedText
-              style={{ fontSize: 18, fontWeight: "600", marginBottom: 16 }}
-            >
-              Messages ({messages.length})
-            </ThemedText>
-
-            {loading && <ThemedText>Loading messages...</ThemedText>}
-
-            {!loading && messages.length === 0 && (
-              <ThemedText
-                style={{ opacity: 0.6, textAlign: "center", marginTop: 32 }}
-              >
-                No messages in this session
-              </ThemedText>
-            )}
-
-            {messages.map((message) => {
-              const status = getMessageStatus(message);
-              return (
-                <ThemedView
-                  key={message.info.id}
-                  lightColor={
-                    message.info.role === "user" ? "#eff6ff" : "#f9fafb"
-                  }
-                  darkColor={
-                    message.info.role === "user" ? "#1e3a8a" : "#374151"
-                  }
-                  style={{
-                    padding: 16,
-                    marginBottom: 12,
-                    borderRadius: 8,
-                    borderWidth: 1,
-                    borderColor:
-                      message.info.role === "user" ? "#dbeafe" : "#f3f4f6",
-                  }}
-                >
-                  <ThemedView
-                    style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 8,
-                    }}
-                  >
-                    <ThemedText
-                      style={{
-                        fontWeight: "600",
-                        color:
-                          message.info.role === "user" ? "#1d4ed8" : "#374151",
-                      }}
-                    >
-                      {message.info.role === "user" ? "User" : "Assistant"}
-                    </ThemedText>
-                    <ThemedView
-                      style={{
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderRadius: 4,
-                        backgroundColor:
-                          status === "complete"
-                            ? "#dcfce7"
-                            : status === "error"
-                              ? "#fee2e2"
-                              : status === "streaming"
-                                ? "#fef3c7"
-                                : "#f3f4f6",
-                      }}
-                    >
-                      <ThemedText
-                        style={{
-                          fontSize: 10,
-                          fontWeight: "500",
-                          color:
-                            status === "complete"
-                              ? "#166534"
-                              : status === "error"
-                                ? "#dc2626"
-                                : status === "streaming"
-                                  ? "#d97706"
-                                  : "#6b7280",
-                        }}
-                      >
-                        {status}
-                      </ThemedText>
-                    </ThemedView>
-                  </ThemedView>
-
-                  <ThemedText
-                    style={{ fontSize: 14, marginBottom: 8, lineHeight: 20 }}
-                  >
-                    {getMessagePreview(message.parts)}
-                  </ThemedText>
-
-                  <ThemedText style={{ fontSize: 11, opacity: 0.6 }}>
-                    {formatTime(message.info.time.created)}
-                  </ThemedText>
-                </ThemedView>
-              );
-            })}
-          </ThemedView>
-        </ThemedView>
-      </ScrollView>
+        </ScrollView>
+      </ThemedView>
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: TerminalColors.bg,
+  },
+  scrollView: {
+    flex: 1,
+    padding: 16,
+  },
+  sessionPanel: {
+    flex: 1,
+  },
+  sessionInfo: {
+    marginBottom: 16,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 4,
+  },
+  messagesList: {
+    maxHeight: 600,
+  },
+  messageContainer: {
+    marginBottom: 16,
+  },
+  messageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  messageHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  messageContent: {
+    paddingLeft: 56, // Align with message content
+  },
+  messageText: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    lineHeight: 18,
+    color: TerminalColors.text,
+    marginBottom: 8,
+  },
+  messageTime: {
+    fontSize: 10,
+  },
+  loadingState: {
+    padding: 32,
+    alignItems: 'center',
+  },
+  emptyState: {
+    padding: 32,
+    alignItems: 'center',
+    gap: 8,
+  },
+});
 

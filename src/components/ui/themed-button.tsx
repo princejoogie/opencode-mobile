@@ -1,53 +1,72 @@
-import { useThemeColor } from "@/hooks/useThemeColor";
 import { StyleSheet, TouchableOpacity, TouchableOpacityProps } from "react-native";
 import { ThemedText, ThemedTextProps } from "./themed-text";
+import { TerminalColors } from "@/constants/Colors";
 
 export type ThemedButtonProps = TouchableOpacityProps & {
-  lightColor?: string;
-  darkColor?: string;
-  lightTextColor?: string;
-  darkTextColor?: string;
-  variant?: "primary" | "secondary" | "ghost" | "destructive";
+  variant?: "primary" | "secondary" | "ghost" | "destructive" | "terminal";
   textProps?: ThemedTextProps;
   children: React.ReactNode;
 };
 
 export function ThemedButton({
   style,
-  lightColor,
-  darkColor,
-  lightTextColor,
-  darkTextColor,
-  variant = "primary",
+  variant = "terminal",
   textProps,
   children,
   ...rest
 }: ThemedButtonProps) {
-  const backgroundColor = useThemeColor(
-    { light: lightColor, dark: darkColor },
-    variant === "primary" ? "tint" : 
-    variant === "secondary" ? "background" : 
-    variant === "destructive" ? "background" : "background"
-  );
+  const getVariantStyle = () => {
+    switch (variant) {
+      case "primary":
+        return {
+          backgroundColor: TerminalColors.green,
+          borderColor: TerminalColors.green,
+          borderWidth: 1,
+        };
+      case "secondary":
+        return {
+          backgroundColor: TerminalColors.bgSecondary,
+          borderColor: TerminalColors.border,
+          borderWidth: 1,
+        };
+      case "ghost":
+        return {
+          backgroundColor: "transparent",
+          borderColor: "transparent",
+          borderWidth: 1,
+        };
+      case "destructive":
+        return {
+          backgroundColor: TerminalColors.red,
+          borderColor: TerminalColors.red,
+          borderWidth: 1,
+        };
+      case "terminal":
+      default:
+        return {
+          backgroundColor: TerminalColors.bgSecondary,
+          borderColor: TerminalColors.border,
+          borderWidth: 1,
+        };
+    }
+  };
 
-  const textColor = useThemeColor(
-    { light: lightTextColor, dark: darkTextColor },
-    variant === "primary" ? "background" : 
-    variant === "destructive" ? "text" : "text"
-  );
-
-  const borderColor = useThemeColor({}, variant === "secondary" ? "tint" : "background");
+  const getTextColor = () => {
+    switch (variant) {
+      case "primary":
+        return TerminalColors.bg;
+      case "destructive":
+        return TerminalColors.text;
+      default:
+        return TerminalColors.text;
+    }
+  };
 
   return (
     <TouchableOpacity
       style={[
         styles.base,
-        {
-          backgroundColor,
-          ...(variant === "secondary" && { borderColor, borderWidth: 1 }),
-          ...(variant === "ghost" && { backgroundColor: "transparent" }),
-          ...(variant === "destructive" && { borderColor: "#dc2626", borderWidth: 1 }),
-        },
+        getVariantStyle(),
         style,
       ]}
       {...rest}
@@ -56,8 +75,7 @@ export function ThemedButton({
         <ThemedText
           style={[
             styles.text,
-            { color: textColor },
-            variant === "destructive" && { color: "#dc2626" },
+            { color: getTextColor() },
           ]}
           {...textProps}
         >
@@ -73,15 +91,15 @@ export function ThemedButton({
 const styles = StyleSheet.create({
   base: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 8,
+    borderRadius: 0,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 44,
+    minHeight: 32,
   },
   text: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 14,
+    fontFamily: "monospace",
     textAlign: "center",
   },
 });
