@@ -1,13 +1,19 @@
-import { Platform, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
-import { router } from 'expo-router';
+import {
+  Platform,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useState } from "react";
+import { router, Stack } from "expo-router";
 
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
 
 export default function HomeScreen() {
-  const [serverUrl, setServerUrl] = useState('http://palkia:3000');
+  const [serverUrl, setServerUrl] = useState("http://palkia:3000");
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [ports, setPorts] = useState<number[]>([]);
@@ -20,7 +26,7 @@ export default function HomeScreen() {
       const data = await response.json();
       setPorts(data.ports || []);
     } catch (error) {
-      Alert.alert('Error', 'Failed to fetch ports');
+      Alert.alert("Error", "Failed to fetch ports");
       setPorts([]);
     } finally {
       setIsLoadingPorts(false);
@@ -29,32 +35,32 @@ export default function HomeScreen() {
 
   const pingServer = async () => {
     if (!serverUrl.trim()) {
-      Alert.alert('Error', 'Please enter a server URL');
+      Alert.alert("Error", "Please enter a server URL");
       return;
     }
 
     setIsChecking(true);
     try {
       const response = await fetch(`${serverUrl}/ping`, {
-        method: 'GET',
+        method: "GET",
       });
-      
+
       const data = await response.json();
       const connected = data.ok === true;
       setIsConnected(connected);
-      
+
       if (connected) {
-        Alert.alert('Success', 'Server is reachable!');
+        Alert.alert("Success", "Server is reachable!");
         // Fetch ports after successful ping
         await fetchPorts();
       } else {
-        Alert.alert('Failed', 'Server did not respond with { ok: true }');
+        Alert.alert("Failed", "Server did not respond with { ok: true }");
         setPorts([]);
       }
     } catch (error) {
       setIsConnected(false);
       setPorts([]);
-      Alert.alert('Error', 'Failed to reach server');
+      Alert.alert("Error", "Failed to reach server");
     } finally {
       setIsChecking(false);
     }
@@ -76,40 +82,42 @@ export default function HomeScreen() {
   );
 
   return (
-    <SafeAreaView className="flex-1">
+    <>
+      <Stack.Screen
+        options={{
+          title: "OpenCode",
+          headerShown: true,
+        }}
+      />
       <ThemedView className="flex-1">
-        <ScrollView className="flex-1 p-8">
+        <ScrollView className="flex-1 p-2">
           <ThemedView className="gap-4">
-            <ThemedView className="flex-row items-center gap-2">
-              <ThemedText type="title">OpenCode Server</ThemedText>
-            </ThemedView>
-            
             <ThemedView className="gap-2 mb-2">
               <ThemedText type="subtitle">Server Connection</ThemedText>
               <TextInput
-                className="border border-gray-300 p-0 m-0 rounded-lg text-base text-white"
+                className="border border-blue-300 px-4 rounded text-base text-white pb-4 pt-2"
                 value={serverUrl}
                 onChangeText={setServerUrl}
                 placeholder="Enter server URL"
               />
               <TouchableOpacity
-                className={`p-3 rounded-lg items-center ${isChecking ? 'opacity-50' : ''}`}
+                className={`p-3 rounded-lg items-center ${isChecking ? "opacity-50" : ""}`}
                 onPress={pingServer}
                 disabled={isChecking}
               >
                 <ThemedText>
-                  {isChecking ? 'Checking...' : 'Ping Server'}
+                  {isChecking ? "Checking..." : "Ping Server"}
                 </ThemedText>
               </TouchableOpacity>
               {isConnected !== null && (
                 <ThemedView className="p-2 items-center">
                   <ThemedText>
-                    {isConnected ? '✓ Connected' : '✗ Not Connected'}
+                    {isConnected ? "✓ Connected" : "✗ Not Connected"}
                   </ThemedText>
                 </ThemedView>
               )}
             </ThemedView>
-            
+
             {isConnected && (
               <ThemedView className="gap-2 mb-2">
                 <ThemedText type="subtitle">OpenCode Ports</ThemedText>
@@ -127,8 +135,6 @@ export default function HomeScreen() {
           </ThemedView>
         </ScrollView>
       </ThemedView>
-    </SafeAreaView>
+    </>
   );
 }
-
-

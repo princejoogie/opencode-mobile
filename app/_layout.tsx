@@ -25,8 +25,6 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="port-detail" options={{ title: "Port Details" }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
