@@ -1,6 +1,5 @@
 import {
   TextInput,
-  TouchableOpacity,
   Alert,
   ScrollView,
   View,
@@ -9,6 +8,7 @@ import { useState } from "react";
 import { router, Stack } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ThemedText } from "@/components/ui/themed-text";
+import { ThemedButton } from "@/components/ui/themed-button";
 import { api } from "@/lib/api";
 
 export default function HomeScreen() {
@@ -62,14 +62,17 @@ export default function HomeScreen() {
   };
 
   const renderAppItem = (app: any) => (
-    <TouchableOpacity
+    <ThemedButton
       key={app.port}
-      className="flex-row justify-between items-center p-3 my-1"
+      variant="ghost"
+      style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginVertical: 4 }}
       onPress={() => navigateToPortDetail(app.port)}
     >
-      <ThemedText>{getProjectName(app.path.root)}</ThemedText>
-      <ThemedText>›</ThemedText>
-    </TouchableOpacity>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+        <ThemedText>{getProjectName(app.path.root)}</ThemedText>
+        <ThemedText>›</ThemedText>
+      </View>
+    </ThemedButton>
   );
 
   return (
@@ -92,15 +95,14 @@ export default function HomeScreen() {
                   onChangeText={setServerUrl}
                   placeholder="Enter server URL"
                 />
-                <TouchableOpacity
-                  className={`flex items-cente justify-center px-4 rounded bg-green-700 items-center ${pingMutation.isPending ? "opacity-50" : ""}`}
+                <ThemedButton
+                  variant="primary"
+                  style={{ opacity: pingMutation.isPending ? 0.5 : 1 }}
                   onPress={connectToServer}
                   disabled={pingMutation.isPending}
                 >
-                  <ThemedText>
-                    {pingMutation.isPending ? "Connecting..." : "Connect"}
-                  </ThemedText>
-                </TouchableOpacity>
+                  {pingMutation.isPending ? "Connecting..." : "Connect"}
+                </ThemedButton>
               </View>
               {isConnected !== null && (
                 <View className="p-2 items-center">
