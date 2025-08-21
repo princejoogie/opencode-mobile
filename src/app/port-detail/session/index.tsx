@@ -4,6 +4,7 @@ import { api, type Message, type MessagePart, type ToolPart } from "@/lib/api";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { useState, useEffect, useCallback } from "react";
+import { useGlobal } from "@/store/global";
 
 export default function SessionScreen() {
   const { port, sessionId, title } = useLocalSearchParams<{
@@ -13,8 +14,7 @@ export default function SessionScreen() {
   }>();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-
-  const serverUrl = "http://palkia:3000";
+  const { serverUrl } = useGlobal();
 
   const loadMessages = useCallback(async () => {
     try {

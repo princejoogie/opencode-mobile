@@ -5,6 +5,7 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedButton } from "@/components/ui/themed-button";
 import { ThemedView } from "@/components/ui/themed-view";
 import { useState, useEffect } from "react";
+import { useGlobal } from "@/store/global";
 
 interface SessionInfo {
   id: string;
@@ -21,8 +22,7 @@ export default function PortDetailScreen() {
   const { port } = useLocalSearchParams<{ port: string }>();
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [loading, setLoading] = useState(false);
-
-  const serverUrl = "http://palkia:3000";
+  const { serverUrl } = useGlobal();
 
   useEffect(() => {
     const loadSessions = async () => {

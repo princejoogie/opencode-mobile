@@ -6,9 +6,10 @@ import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedButton } from "@/components/ui/themed-button";
 import { ThemedView } from "@/components/ui/themed-view";
 import { api } from "@/lib/api";
+import { useGlobal } from "@/store/global";
 
 export default function HomeScreen() {
-  const [serverUrl, setServerUrl] = useState("http://palkia:3000");
+  const { serverUrl, setServerUrl } = useGlobal();
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
   const queryClient = useQueryClient();
 
