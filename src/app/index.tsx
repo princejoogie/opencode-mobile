@@ -1,10 +1,11 @@
-import { TextInput, Alert, ScrollView, View } from "react-native";
+import { Alert, ScrollView, View } from "react-native";
 import { useState } from "react";
 import { router, Stack } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedButton } from "@/components/ui/themed-button";
 import { ThemedView } from "@/components/ui/themed-view";
+import { ThemedInput } from "@/components/ui/themed-input";
 import { api } from "@/lib/api";
 import { useGlobal } from "@/store/global";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -103,15 +104,14 @@ export default function HomeScreen() {
               <ThemedText type="muted" className="mb-2">
                 Server URL:
               </ThemedText>
-              <View className="flex-row gap-3 mb-3">
-                <TextInput
-                  className="flex-1 bg-terminal-bg-tertiary border border-terminal-border text-terminal-text font-mono text-sm px-3 py-2 rounded-none"
-                  value={serverUrl}
-                  onChangeText={setServerUrl}
-                  placeholder="Enter server URL"
-                  placeholderTextColor="#666666"
-                />
-                <ThemedButton
+               <View className="flex-row gap-3 mb-3">
+                 <ThemedInput
+                   className="flex-1"
+                   value={serverUrl}
+                   onChangeText={setServerUrl}
+                   placeholder="Enter server URL"
+                 />
+                 <ThemedButton
                   variant="primary"
                   className={`min-w-24 ${pingMutation.isPending ? "opacity-50" : "opacity-100"}`}
                   onPress={connectToServer}
@@ -131,9 +131,9 @@ export default function HomeScreen() {
           </ThemedView>
 
           {isConnected && (
-            <ThemedView variant="panel" className="flex-1">
-              <ThemedView variant="panel-header">
-                <ThemedText type="subtitle">Active Sessions</ThemedText>
+            <ThemedView className="flex-1 p-4">
+              <ThemedView className="mb-4">
+                <ThemedText>Active Sessions</ThemedText>
                 <ThemedText type="muted">{apps.length} found</ThemedText>
               </ThemedView>
               <ThemedView variant="panel-content" style={{ padding: 0 }}>

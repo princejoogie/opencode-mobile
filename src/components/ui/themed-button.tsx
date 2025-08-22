@@ -45,7 +45,7 @@ export function ThemedButton({
   const getTextClassName = () => {
     switch (variant) {
       case "primary":
-        return "text-terminal-bg";
+        return "text-black";
       case "destructive":
         return "text-terminal-text";
       default:
