@@ -7,6 +7,8 @@ import { ThemedButton } from "@/components/ui/themed-button";
 import { ThemedView } from "@/components/ui/themed-view";
 import { api } from "@/lib/api";
 import { useGlobal } from "@/store/global";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { OPENCODE_LOGO } from "@/constants";
 
 export default function HomeScreen() {
   const { serverUrl, setServerUrl } = useGlobal();
@@ -62,14 +64,17 @@ export default function HomeScreen() {
     <ThemedButton
       key={app.port}
       variant="ghost"
-       className={`border-b border-terminal-border rounded-none px-4 py-3 bg-transparent ${index === apps.length - 1 ? 'border-b-0' : ''}`}
+      className={`border-b border-terminal-border rounded-none px-4 py-3 bg-transparent ${index === apps.length - 1 ? "border-b-0" : ""}`}
       onPress={() => navigateToPortDetail(app.port)}
     >
-       <View className="flex-row justify-between items-center w-full">
-         <View className="flex-row items-center gap-3">
-           <ThemedText type="dim" className="font-mono text-xs min-w-10 text-right">
-             {String(app.port).padStart(4, " ")}
-           </ThemedText>
+      <View className="flex-row justify-between items-center w-full">
+        <View className="flex-row items-center gap-3">
+          <ThemedText
+            type="dim"
+            className="font-mono text-xs min-w-10 text-right"
+          >
+            {String(app.port).padStart(4, " ")}
+          </ThemedText>
           <ThemedText>{getProjectName(app.path.root)}</ThemedText>
         </View>
         <ThemedText type="muted">›</ThemedText>
@@ -78,23 +83,18 @@ export default function HomeScreen() {
   );
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: "# OpenCode Terminal",
-          headerShown: true,
-           headerStyle: {
-             backgroundColor: '#1a1a1a',
-           },
-           headerTintColor: '#00ff00',
-          headerTitleStyle: {
-            fontFamily: "monospace",
-            fontSize: 16,
-          },
-        }}
-      />
+    <SafeAreaView className="flex-1">
+      <Stack.Screen options={{ headerShown: false }} />
       <ThemedView className="flex-1 bg-bg">
         <ScrollView className="flex-1 px-4 py-4">
+          <ThemedView className="mb-4 justify-center items-center">
+            <ThemedText
+              style={{ fontFamily: "GeistMono" }}
+              className="font-mono text-xs text-center text-terminal-text"
+            >
+              {OPENCODE_LOGO}
+            </ThemedText>
+          </ThemedView>
           <ThemedView variant="panel" className="mb-4">
             <ThemedView variant="panel-header">
               <ThemedText type="subtitle">Connection</ThemedText>
@@ -103,17 +103,17 @@ export default function HomeScreen() {
               <ThemedText type="muted" className="mb-2">
                 Server URL:
               </ThemedText>
-               <View className="flex-row gap-3 mb-3">
-                 <TextInput
-                   className="flex-1 bg-terminal-bg-tertiary border border-terminal-border text-terminal-text font-mono text-sm px-3 py-2 rounded-none"
-                   value={serverUrl}
-                   onChangeText={setServerUrl}
-                   placeholder="Enter server URL"
-                   placeholderTextColor="#666666"
-                 />
+              <View className="flex-row gap-3 mb-3">
+                <TextInput
+                  className="flex-1 bg-terminal-bg-tertiary border border-terminal-border text-terminal-text font-mono text-sm px-3 py-2 rounded-none"
+                  value={serverUrl}
+                  onChangeText={setServerUrl}
+                  placeholder="Enter server URL"
+                  placeholderTextColor="#666666"
+                />
                 <ThemedButton
                   variant="primary"
-                   className={`min-w-24 ${pingMutation.isPending ? 'opacity-50' : 'opacity-100'}`}
+                  className={`min-w-24 ${pingMutation.isPending ? "opacity-50" : "opacity-100"}`}
                   onPress={connectToServer}
                   disabled={pingMutation.isPending}
                 >
@@ -121,7 +121,7 @@ export default function HomeScreen() {
                 </ThemedButton>
               </View>
               {isConnected !== null && (
-                 <View className="items-center pt-2">
+                <View className="items-center pt-2">
                   <ThemedText type={isConnected ? "success" : "error"}>
                     {isConnected ? "✓ Connected" : "✗ Connection Failed"}
                   </ThemedText>
@@ -131,36 +131,35 @@ export default function HomeScreen() {
           </ThemedView>
 
           {isConnected && (
-             <ThemedView variant="panel" className="flex-1">
+            <ThemedView variant="panel" className="flex-1">
               <ThemedView variant="panel-header">
                 <ThemedText type="subtitle">Active Sessions</ThemedText>
                 <ThemedText type="muted">{apps.length} found</ThemedText>
               </ThemedView>
               <ThemedView variant="panel-content" style={{ padding: 0 }}>
                 {isLoadingPorts ? (
-                   <View className="p-8 items-center">
-                     <ThemedText type="muted">Scanning ports...</ThemedText>
-                   </View>
+                  <View className="p-8 items-center">
+                    <ThemedText type="muted">Scanning ports...</ThemedText>
+                  </View>
                 ) : apps.length > 0 ? (
-                   <ScrollView className="max-h-[300px]" nestedScrollEnabled>
+                  <ScrollView className="max-h-[300px]" nestedScrollEnabled>
                     {apps.map(renderAppItem)}
                   </ScrollView>
                 ) : (
-                   <View className="p-8 items-center gap-2">
-                     <ThemedText type="muted">
-                       No active sessions found
-                     </ThemedText>
-                     <ThemedText type="dim">
-                       Start a development server to see it here
-                     </ThemedText>
-                   </View>
+                  <View className="p-8 items-center gap-2">
+                    <ThemedText type="muted">
+                      No active sessions found
+                    </ThemedText>
+                    <ThemedText type="dim">
+                      Start a development server to see it here
+                    </ThemedText>
+                  </View>
                 )}
               </ThemedView>
             </ThemedView>
           )}
         </ScrollView>
       </ThemedView>
-    </>
+    </SafeAreaView>
   );
 }
-
