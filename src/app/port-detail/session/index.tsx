@@ -4,9 +4,11 @@ import { api, type Message, type MessagePart, type ToolPart } from "@/lib/api";
 import { ThemedText } from "@/components/ui/themed-text";
 import { ThemedView } from "@/components/ui/themed-view";
 import { ThemedButton } from "@/components/ui/themed-button";
+import { ThemedInput } from "@/components/ui/themed-input";
 import { useQuery } from "@tanstack/react-query";
 import { useGlobal } from "@/store/global";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useState } from "react";
 
 export default function SessionScreen() {
   const { port, sessionId, title } = useLocalSearchParams<{
@@ -16,7 +18,7 @@ export default function SessionScreen() {
   }>();
   const { serverUrl } = useGlobal();
 
-  const { data: messages = [], isLoading: loading, error } = useQuery({
+  const { data: messages = [], isLoading: loading, error, refetch } = useQuery({
     queryKey: ["session-messages", serverUrl, port, sessionId],
     queryFn: async () => {
       const messageList = await api.getSessionMessages(
@@ -50,6 +52,9 @@ export default function SessionScreen() {
     },
     enabled: !!(sessionId && port),
   });
+
+  const [inputMessage, setInputMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   // Handle error state
   if (error) {
@@ -129,6 +134,24 @@ export default function SessionScreen() {
 
   const decodedTitle = title ? decodeURIComponent(title) : "Untitled Session";
 
+  const sendMessage = async () => {
+    if (!inputMessage.trim()) return;
+
+    try {
+      setIsSending(true);
+      // TODO: Implement actual message sending API call
+      // For now, just clear the input and show a placeholder
+      Alert.alert("Info", "Message sending not yet implemented");
+      setInputMessage("");
+      // After sending, refetch messages to show the new message
+      refetch();
+    } catch (error) {
+      Alert.alert("Error", `Failed to send message: ${error}`);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1">
       <Stack.Screen options={{ headerShown: false }} />
@@ -205,6 +228,27 @@ export default function SessionScreen() {
                 })}
               </ScrollView>
             )}
+
+            {/* Message Input */}
+            <ThemedView variant="transparent" className="mt-4">
+              <View className="flex-row gap-2 items-center">
+                <ThemedInput
+                  className="flex-1 rounded-none"
+                  value={inputMessage}
+                  onChangeText={setInputMessage}
+                  placeholder="Type a message..."
+                  onSubmitEditing={sendMessage}
+                />
+                <ThemedButton
+                  variant="primary"
+                  className={`min-w-16 ${isSending ? "opacity-50" : "opacity-100"}`}
+                  onPress={sendMessage}
+                  disabled={isSending || !inputMessage.trim()}
+                >
+                  {isSending ? "..." : "Send"}
+                </ThemedButton>
+              </View>
+            </ThemedView>
           </ThemedView>
         </ThemedView>
       </ThemedView>

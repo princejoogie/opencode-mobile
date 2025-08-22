@@ -48,7 +48,6 @@ export function ThemedInput({
           color: textColor,
           backgroundColor,
           borderWidth: 1,
-          borderRadius: 4,
           paddingHorizontal: 12,
           paddingVertical: 8,
           fontSize: 14,

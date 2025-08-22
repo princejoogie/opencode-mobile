@@ -98,35 +98,35 @@ export default function HomeScreen() {
           </ThemedView>
           <ThemedView variant="panel" className="mb-4">
             <ThemedView variant="panel-header">
-              <ThemedText type="subtitle">Connection</ThemedText>
+              <View className="flex-row justify-between items-center">
+                <ThemedText type="subtitle">Connection</ThemedText>
+                {isConnected !== null && (
+                  <ThemedText type={isConnected ? "success" : "error"}>
+                    {isConnected ? "✓ Connected" : "✗ Failed"}
+                  </ThemedText>
+                )}
+              </View>
             </ThemedView>
             <ThemedView variant="panel-content" className="p-4">
               <ThemedText type="muted" className="mb-2">
                 Server URL:
               </ThemedText>
-               <View className="flex-row gap-3 mb-3">
-                 <ThemedInput
-                   className="flex-1"
-                   value={serverUrl}
-                   onChangeText={setServerUrl}
-                   placeholder="Enter server URL"
-                 />
-                 <ThemedButton
-                  variant="primary"
-                  className={`min-w-24 ${pingMutation.isPending ? "opacity-50" : "opacity-100"}`}
-                  onPress={connectToServer}
-                  disabled={pingMutation.isPending}
-                >
-                  {pingMutation.isPending ? "Connecting..." : "Connect"}
-                </ThemedButton>
-              </View>
-              {isConnected !== null && (
-                <View className="items-center pt-2">
-                  <ThemedText type={isConnected ? "success" : "error"}>
-                    {isConnected ? "✓ Connected" : "✗ Connection Failed"}
-                  </ThemedText>
-                </View>
-              )}
+                <View className="flex-row gap-3">
+                  <ThemedInput
+                    className="flex-1"
+                    value={serverUrl}
+                    onChangeText={setServerUrl}
+                    placeholder="Enter server URL"
+                  />
+                  <ThemedButton
+                   variant="primary"
+                   className={`min-w-24 ${pingMutation.isPending ? "opacity-50" : "opacity-100"}`}
+                   onPress={connectToServer}
+                   disabled={pingMutation.isPending}
+                 >
+                   {pingMutation.isPending ? "Connecting..." : "Connect"}
+                 </ThemedButton>
+               </View>
             </ThemedView>
           </ThemedView>
 
