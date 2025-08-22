@@ -17,30 +17,22 @@ app.get("/ping", (c) => {
 
 app.get("/ports", async (c) => {
   try {
-    const { stdout } = await execAsync("netstat -tulpn | grep opencode");
+    const { stdout } = await execAsync("lsof -i | grep opencode");
 
-    // Parse the output to extract port numbers
+    // Filter lines that contain "LISTEN" and parse port numbers
     const lines = stdout
       .trim()
       .split("\n")
-      .filter((line) => line.trim());
+      .filter((line) => line.trim() && line.includes("(LISTEN)"));
     const ports: number[] = [];
 
     lines.forEach((line) => {
-      // Split by whitespace and find the local address column
-      const columns = line.trim().split(/\s+/);
-      for (let i = 0; i < columns.length; i++) {
-        const column = columns[i];
-        // Look for pattern like 127.0.0.1:37609 or 0.0.0.0:37609
-        if (
-          column.includes(":") &&
-          (column.startsWith("127.0.0.1:") || column.startsWith("0.0.0.0:"))
-        ) {
-          const port = column.split(":")[1];
-          if (port && !isNaN(Number(port))) {
-            ports.push(parseInt(port));
-          }
-          break;
+      // Extract port from pattern like "TCP localhost:39185 (LISTEN)"
+      const match = line.match(/TCP localhost:(\d+) \(LISTEN\)/);
+      if (match) {
+        const port = parseInt(match[1]);
+        if (!isNaN(port)) {
+          ports.push(port);
         }
       }
     });
