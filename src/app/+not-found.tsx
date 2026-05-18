@@ -1,17 +1,25 @@
 import { Link, Stack } from "expo-router";
-import { Text, View } from "react-native";
+import { ScrollView } from "react-native";
+import { AppText, Card, useTheme } from "@/components/surface";
 
 export default function NotFoundScreen() {
+  const theme = useTheme();
+
   return (
     <>
-      <Stack.Screen options={{ title: "Oops!" }} />
-      <View className="flex-1 items-center justify-center p-5">
-        <Text>This screen does not exist.</Text>
-        <Link href="/" className="mt-4 py-4">
-          <Text>Go to home screen!</Text>
-        </Link>
-      </View>
+      <ScrollView
+        style={{ flex: 1, backgroundColor: theme.background }}
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={{ padding: 16 }}
+      >
+        <Card>
+          <AppText variant="headline">Screen not found</AppText>
+          <Link href="/">
+            <AppText color={theme.accent}>Back to servers</AppText>
+          </Link>
+        </Card>
+      </ScrollView>
+      <Stack.Screen options={{ title: "Not Found" }} />
     </>
   );
 }
-

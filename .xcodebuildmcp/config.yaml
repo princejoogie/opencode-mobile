@@ -1,0 +1,15 @@
+schemaVersion: 1
+enabledWorkflows:
+  - simulator
+  - ui-automation
+  - simulator-management
+debug: false
+sentryDisabled: true
+setupPreferences:
+  platforms:
+    - iOS
+sessionDefaults:
+  projectPath: ios/opencodemobile.xcodeproj
+  scheme: opencodemobile
+  simulatorId: 67EA30BF-43B1-4F59-94CA-CA918209BCEF
+  simulatorName: iPhone 17 Pro Max

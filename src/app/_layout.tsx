@@ -1,13 +1,19 @@
-import "../global.css";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack } from "expo-router/stack";
 import { StatusBar } from "expo-status-bar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "react-native-reanimated";
-import { TerminalColors } from "@/constants/Colors";
-import { GlobalProvider } from "@/store/global";
+import { ServerProvider } from "@/store/servers";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      staleTime: 15_000,
+      gcTime: 5 * 60_000,
+    },
+  },
+});
 
 export default function RootLayout() {
   const [loaded] = useFonts({
@@ -21,26 +27,22 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <GlobalProvider>
+      <ServerProvider>
         <Stack
           screenOptions={{
-            headerStyle: {
-              backgroundColor: TerminalColors.bg,
-            },
-            headerTintColor: TerminalColors.green,
-            headerTitleStyle: {
-              fontFamily: "monospace",
-              fontSize: 16,
-            },
-            contentStyle: {
-              backgroundColor: TerminalColors.bg,
-            },
+            headerLargeTitle: true,
+            headerTransparent: true,
+            headerBlurEffect: "regular",
+            headerShadowVisible: false,
+            headerBackButtonDisplayMode: "minimal",
           }}
         >
-          <Stack.Screen name="+not-found" />
+          <Stack.Screen name="index" options={{ title: "Servers" }} />
+          <Stack.Screen name="server/[serverId]" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" options={{ title: "Not Found" }} />
         </Stack>
-        <StatusBar style="light" backgroundColor={TerminalColors.bg} />
-      </GlobalProvider>
+        <StatusBar style="auto" />
+      </ServerProvider>
     </QueryClientProvider>
   );
 }
