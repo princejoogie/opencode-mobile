@@ -80,12 +80,16 @@ export function Card({ children, style }: { children: ReactNode; style?: StylePr
 
 export function Row({
   children,
+  accessibilityLabel,
   onPress,
   style,
+  testID,
 }: {
   children: ReactNode;
+  accessibilityLabel?: string;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 }) {
   const theme = useTheme();
   const content = (
@@ -109,7 +113,7 @@ export function Row({
 
   if (!onPress) return content;
   return (
-    <NativePressable onPress={onPress} style={{ alignSelf: "stretch" }}>
+    <NativePressable accessibilityLabel={accessibilityLabel} onPress={onPress} style={{ alignSelf: "stretch" }} testID={testID}>
       {content}
     </NativePressable>
   );

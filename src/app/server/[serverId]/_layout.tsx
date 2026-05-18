@@ -14,9 +14,8 @@ export default function ServerLayout() {
   return (
     <Stack
       screenOptions={{
-        headerLargeTitle: true,
-        headerTransparent: true,
-        headerBlurEffect: "regular",
+        headerLargeTitle: false,
+        headerTransparent: false,
         headerShadowVisible: false,
         headerBackButtonDisplayMode: "minimal",
       }}

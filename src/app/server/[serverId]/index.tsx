@@ -1,6 +1,7 @@
 import { RefreshControl, ScrollView, View } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { HeaderAction } from "@/components/header-action";
 import { NativeButton } from "@/components/native-control";
 import { AppText, EmptyState, LoadingState, Pill, Row, SectionHeader, useTheme } from "@/components/surface";
 import { createOpencodeSdk, serverName } from "@/lib/opencode-client";
@@ -50,7 +51,10 @@ export default function ServerProjectsScreen() {
                 {server.url}
               </AppText>
             </View>
-            {health.data?.healthy ? <Pill tone="success">{health.data.version}</Pill> : <Pill tone="danger">Offline</Pill>}
+            <View style={{ alignItems: "flex-end", gap: 8 }}>
+              {health.data?.healthy ? <Pill tone="success">{health.data.version}</Pill> : <Pill tone="danger">Offline</Pill>}
+              <NativeButton title="Refresh" icon="refresh" onPress={refresh} testID="refresh-projects-button" variant="plain" />
+            </View>
           </View>
           <AppText color={theme.muted}>Projects and sessions are loaded through `@opencode-ai/sdk/v2/client` with opencode directory scoping.</AppText>
         </Row>
@@ -65,6 +69,8 @@ export default function ServerProjectsScreen() {
             {projects.data.map((project) => (
               <Row
                 key={project.id}
+                accessibilityLabel={projectDisplayName(project)}
+                testID={`project-row-${project.id}`}
                 onPress={() =>
                   router.push({
                     pathname: "/server/[serverId]/project/[projectKey]",
@@ -113,7 +119,7 @@ export default function ServerProjectsScreen() {
       <Stack.Screen
         options={{
           title: serverName(server),
-          headerRight: () => <NativeButton title="Refresh" icon="refresh" variant="plain" onPress={refresh} />,
+          headerRight: () => <HeaderAction title="Refresh" icon="refresh" onPress={refresh} testID="refresh-projects-header-button" />,
         }}
       />
     </>

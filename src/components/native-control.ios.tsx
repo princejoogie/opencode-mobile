@@ -3,6 +3,7 @@ import type { StyleProp, ViewStyle } from "react-native";
 import { Button, Host, RNHostView, SecureField, TextField, type ButtonProps } from "@expo/ui/swift-ui";
 import {
   autocorrectionDisabled,
+  accessibilityLabel as nativeAccessibilityLabel,
   buttonStyle,
   controlSize,
   disabled,
@@ -21,15 +22,18 @@ type NativeTextFieldKind = "message" | "password" | "search" | "text" | "url" | 
 type NativeButtonProps = {
   title: string;
   icon?: NativeButtonIcon;
+  accessibilityLabel?: string;
   variant?: "primary" | "secondary" | "plain" | "destructive";
   disabled?: boolean;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 };
 
 type NativeTextFieldProps = {
   defaultValue?: string;
   placeholder?: string;
+  accessibilityLabel?: string;
   autoFocus?: boolean;
   secure?: boolean;
   kind?: NativeTextFieldKind;
@@ -37,13 +41,16 @@ type NativeTextFieldProps = {
   autoCorrect?: boolean;
   onValueChange?: (value: string) => void;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 };
 
 type NativePressableProps = {
   children: ReactElement;
+  accessibilityLabel?: string;
   disabled?: boolean;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 };
 
 const buttonIcons = {
@@ -74,7 +81,7 @@ export function NativeHost({
   );
 }
 
-export function NativeButton({ title, icon, variant = "secondary", disabled: isDisabled, onPress, style }: NativeButtonProps) {
+export function NativeButton({ title, icon, accessibilityLabel, variant = "secondary", disabled: isDisabled, onPress, style, testID }: NativeButtonProps) {
   const styleName = variant === "primary" ? "borderedProminent" : variant === "plain" ? "plain" : "bordered";
 
   return (
@@ -84,16 +91,23 @@ export function NativeButton({ title, icon, variant = "secondary", disabled: isD
         systemImage={icon ? buttonIcons[icon] : undefined}
         role={variant === "destructive" ? "destructive" : "default"}
         onPress={isDisabled ? undefined : onPress}
-        modifiers={[buttonStyle(styleName), controlSize("regular"), disabled(!!isDisabled)]}
+        testID={testID}
+        modifiers={[buttonStyle(styleName), controlSize("regular"), disabled(!!isDisabled), nativeAccessibilityLabel(accessibilityLabel ?? title)]}
       />
     </NativeHost>
   );
 }
 
-export function NativePressable({ children, disabled: isDisabled, onPress, style }: NativePressableProps) {
+export function NativePressable({ children, accessibilityLabel, disabled: isDisabled, onPress, style, testID }: NativePressableProps) {
+  const modifiers = [buttonStyle("plain"), disabled(!!isDisabled)];
+
+  if (accessibilityLabel) {
+    modifiers.push(nativeAccessibilityLabel(accessibilityLabel));
+  }
+
   return (
     <NativeHost style={style}>
-      <Button onPress={isDisabled ? undefined : onPress} modifiers={[buttonStyle("plain"), disabled(!!isDisabled)]}>
+      <Button onPress={isDisabled ? undefined : onPress} testID={testID} modifiers={modifiers}>
         <RNHostView matchContents>{children}</RNHostView>
       </Button>
     </NativeHost>
@@ -103,6 +117,7 @@ export function NativePressable({ children, disabled: isDisabled, onPress, style
 export function NativeTextField({
   defaultValue,
   placeholder,
+  accessibilityLabel,
   autoFocus,
   secure,
   kind = "text",
@@ -110,6 +125,7 @@ export function NativeTextField({
   autoCorrect = false,
   onValueChange,
   style,
+  testID,
 }: NativeTextFieldProps) {
   const secureInput = secure || kind === "password";
   const modifiers = [
@@ -131,6 +147,9 @@ export function NativeTextField({
   if (multiline) {
     modifiers.push(lineLimit({ min: 2, max: 6 }));
   }
+  if (accessibilityLabel) {
+    modifiers.push(nativeAccessibilityLabel(accessibilityLabel));
+  }
 
   return (
     <NativeHost style={style} matchHorizontal={false}>
@@ -140,6 +159,7 @@ export function NativeTextField({
           placeholder={placeholder}
           autoFocus={autoFocus}
           onValueChange={onValueChange}
+          testID={testID}
           modifiers={modifiers}
         />
       ) : (
@@ -149,6 +169,7 @@ export function NativeTextField({
           autoFocus={autoFocus}
           axis={multiline ? "vertical" : "horizontal"}
           onValueChange={onValueChange}
+          testID={testID}
           modifiers={modifiers}
         />
       )}

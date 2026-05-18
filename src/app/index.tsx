@@ -31,9 +31,14 @@ function ServerHealth({ server }: { server: ServerConnection }) {
 
 function ServerRow({ server, onRemove }: { server: ServerConnection; onRemove: () => void }) {
   const theme = useTheme();
+  const label = serverName(server);
 
   return (
-    <Row onPress={() => router.push({ pathname: "/server/[serverId]", params: { serverId: server.id } })}>
+    <Row
+      accessibilityLabel={label}
+      testID={`server-row-${server.id}`}
+      onPress={() => router.push({ pathname: "/server/[serverId]", params: { serverId: server.id } })}
+    >
       <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
         <View style={{ flex: 1, gap: 4 }}>
           <AppText variant="headline">{serverName(server)}</AppText>
@@ -107,6 +112,8 @@ export default function ServersScreen() {
             key={`url-${formKey}`}
             defaultValue={url}
             placeholder="http://host:4096"
+            accessibilityLabel="Server URL"
+            testID="server-url"
             kind="url"
             autoFocus={servers.length === 0}
             onValueChange={setUrl}
@@ -116,25 +123,31 @@ export default function ServersScreen() {
             key={`name-${formKey}`}
             defaultValue={displayName}
             placeholder="Display name (optional)"
+            accessibilityLabel="Server display name"
+            testID="server-display-name"
             onValueChange={setDisplayName}
             style={{ alignSelf: "stretch", minHeight: 46 }}
           />
           <View style={{ flexDirection: "row", gap: 10 }}>
             <NativeTextField
               key={`username-${formKey}`}
-            defaultValue={username}
-            placeholder="Username"
-            kind="username"
-            onValueChange={setUsername}
+              defaultValue={username}
+              placeholder="Username"
+              accessibilityLabel="Server username"
+              testID="server-username"
+              kind="username"
+              onValueChange={setUsername}
               style={{ flex: 1, minHeight: 46 }}
             />
             <NativeTextField
               key={`password-${formKey}`}
-            defaultValue={password}
-            placeholder="Password"
-            kind="password"
-            secure
-            onValueChange={setPassword}
+              defaultValue={password}
+              placeholder="Password"
+              accessibilityLabel="Server password"
+              testID="server-password"
+              kind="password"
+              secure
+              onValueChange={setPassword}
               style={{ flex: 1, minHeight: 46 }}
             />
           </View>

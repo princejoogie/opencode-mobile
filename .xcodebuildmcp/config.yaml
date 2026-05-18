@@ -9,7 +9,7 @@ setupPreferences:
   platforms:
     - iOS
 sessionDefaults:
-  projectPath: ios/opencodemobile.xcodeproj
+  workspacePath: ios/opencodemobile.xcworkspace
   scheme: opencodemobile
-  simulatorId: 67EA30BF-43B1-4F59-94CA-CA918209BCEF
-  simulatorName: iPhone 17 Pro Max
+  simulatorId: 2EE75B06-0F23-48CE-B8CA-29DBB1A7A606
+  simulatorName: iPhone 17 Pro

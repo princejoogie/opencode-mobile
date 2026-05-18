@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
 import type { ImageSourcePropType, StyleProp, ViewStyle } from "react-native";
 import { Button, FilledTonalButton, Host, Icon, OutlinedTextField, RNHostView, Row, Surface, Text, TextButton } from "@expo/ui/jetpack-compose";
+import { testID as nativeTestID } from "@expo/ui/jetpack-compose/modifiers";
 
 export type NativeButtonIcon = "add" | "collapse" | "expand" | "refresh" | "remove" | "send" | "share" | "stop" | "unshare";
 
@@ -9,15 +10,18 @@ type NativeTextFieldKind = "message" | "password" | "search" | "text" | "url" | 
 type NativeButtonProps = {
   title: string;
   icon?: NativeButtonIcon;
+  accessibilityLabel?: string;
   variant?: "primary" | "secondary" | "plain" | "destructive";
   disabled?: boolean;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 };
 
 type NativeTextFieldProps = {
   defaultValue?: string;
   placeholder?: string;
+  accessibilityLabel?: string;
   autoFocus?: boolean;
   secure?: boolean;
   kind?: NativeTextFieldKind;
@@ -25,13 +29,16 @@ type NativeTextFieldProps = {
   autoCorrect?: boolean;
   onValueChange?: (value: string) => void;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 };
 
 type NativePressableProps = {
   children: ReactElement;
+  accessibilityLabel?: string;
   disabled?: boolean;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 };
 
 const buttonIcons: Record<NativeButtonIcon, ImageSourcePropType> = {
@@ -62,13 +69,13 @@ export function NativeHost({
   );
 }
 
-export function NativeButton({ title, icon, variant = "secondary", disabled, onPress, style }: NativeButtonProps) {
+export function NativeButton({ title, icon, variant = "secondary", disabled, onPress, style, testID }: NativeButtonProps) {
   const Component = variant === "primary" ? Button : variant === "plain" ? TextButton : FilledTonalButton;
   const contentColor = variant === "destructive" ? "#b3261e" : undefined;
 
   return (
     <NativeHost style={style}>
-      <Component enabled={!disabled} onClick={disabled ? undefined : onPress}>
+      <Component enabled={!disabled} onClick={disabled ? undefined : onPress} modifiers={testID ? [nativeTestID(testID)] : undefined}>
         <Row horizontalArrangement={{ spacedBy: 8 }} verticalAlignment="center">
           {icon ? <Icon source={buttonIcons[icon]} size={18} tint={contentColor} contentDescription="" /> : null}
           <Text color={contentColor}>{title}</Text>
@@ -78,10 +85,10 @@ export function NativeButton({ title, icon, variant = "secondary", disabled, onP
   );
 }
 
-export function NativePressable({ children, disabled, onPress, style }: NativePressableProps) {
+export function NativePressable({ children, disabled, onPress, style, testID }: NativePressableProps) {
   return (
     <NativeHost style={style}>
-      <Surface color="transparent" enabled={!disabled} onClick={disabled ? undefined : onPress}>
+      <Surface color="transparent" enabled={!disabled} onClick={disabled ? undefined : onPress} modifiers={testID ? [nativeTestID(testID)] : undefined}>
         <RNHostView matchContents>{children}</RNHostView>
       </Surface>
     </NativeHost>
@@ -91,6 +98,7 @@ export function NativePressable({ children, disabled, onPress, style }: NativePr
 export function NativeTextField({
   defaultValue,
   placeholder,
+  accessibilityLabel,
   autoFocus,
   secure,
   kind = "text",
@@ -98,8 +106,10 @@ export function NativeTextField({
   autoCorrect = false,
   onValueChange,
   style,
+  testID,
 }: NativeTextFieldProps) {
   const secureInput = secure || kind === "password";
+  const modifiers = testID ? [nativeTestID(testID)] : undefined;
 
   return (
     <NativeHost style={style} matchHorizontal={false}>
@@ -110,6 +120,7 @@ export function NativeTextField({
         minLines={multiline ? 2 : undefined}
         maxLines={multiline ? 5 : undefined}
         onValueChange={onValueChange}
+        modifiers={modifiers}
         keyboardOptions={{
           autoCorrectEnabled: autoCorrect,
           capitalization: "none",
@@ -117,6 +128,7 @@ export function NativeTextField({
           imeAction: multiline ? "default" : kind === "search" ? "search" : kind === "message" ? "send" : "done",
         }}
       >
+        {accessibilityLabel ? <OutlinedTextField.Label>{accessibilityLabel}</OutlinedTextField.Label> : null}
         {placeholder ? (
           <OutlinedTextField.Placeholder>
             <Text>{placeholder}</Text>

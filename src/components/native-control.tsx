@@ -8,15 +8,18 @@ type NativeTextFieldKind = "message" | "password" | "search" | "text" | "url" | 
 type NativeButtonProps = {
   title: string;
   icon?: NativeButtonIcon;
+  accessibilityLabel?: string;
   variant?: "primary" | "secondary" | "plain" | "destructive";
   disabled?: boolean;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 };
 
 type NativeTextFieldProps = {
   defaultValue?: string;
   placeholder?: string;
+  accessibilityLabel?: string;
   autoFocus?: boolean;
   secure?: boolean;
   kind?: NativeTextFieldKind;
@@ -24,37 +27,52 @@ type NativeTextFieldProps = {
   autoCorrect?: boolean;
   onValueChange?: (value: string) => void;
   style?: StyleProp<TextStyle>;
+  testID?: string;
 };
 
 type NativePressableProps = {
   children: ReactElement;
+  accessibilityLabel?: string;
   disabled?: boolean;
   onPress?: () => void;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 };
 
 export function NativeHost({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle>; matchHorizontal?: boolean }) {
   return <View style={style}>{children}</View>;
 }
 
-export function NativeButton({ title, variant = "secondary", disabled, onPress, style }: NativeButtonProps) {
+export function NativeButton({ title, accessibilityLabel, variant = "secondary", disabled, onPress, style, testID }: NativeButtonProps) {
   const backgroundColor = variant === "primary" ? "#0A84FF" : "transparent";
   const color = variant === "destructive" ? "#FF453A" : variant === "primary" ? "#fff" : "#0A84FF";
 
   return (
     <Pressable
+      accessible
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
       style={[{ opacity: disabled ? 0.45 : 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, backgroundColor }, style]}
+      testID={testID}
     >
       <Text style={{ color, fontWeight: "600", textAlign: "center" }}>{title}</Text>
     </Pressable>
   );
 }
 
-export function NativePressable({ children, disabled, onPress, style }: NativePressableProps) {
+export function NativePressable({ children, accessibilityLabel, disabled, onPress, style, testID }: NativePressableProps) {
   return (
-    <Pressable disabled={disabled} onPress={onPress} style={style}>
+    <Pressable
+      accessible
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+      disabled={disabled}
+      onPress={onPress}
+      style={style}
+      testID={testID}
+    >
       {children}
     </Pressable>
   );
@@ -63,6 +81,7 @@ export function NativePressable({ children, disabled, onPress, style }: NativePr
 export function NativeTextField({
   defaultValue,
   placeholder,
+  accessibilityLabel,
   autoFocus,
   secure,
   kind = "text",
@@ -70,6 +89,7 @@ export function NativeTextField({
   autoCorrect = false,
   onValueChange,
   style,
+  testID,
 }: NativeTextFieldProps) {
   const secureInput = secure || kind === "password";
 
@@ -77,6 +97,7 @@ export function NativeTextField({
     <TextInput
       defaultValue={defaultValue}
       placeholder={placeholder}
+      accessibilityLabel={accessibilityLabel}
       autoFocus={autoFocus}
       secureTextEntry={secureInput}
       multiline={multiline}
@@ -88,6 +109,7 @@ export function NativeTextField({
       textContentType={kind === "url" ? "URL" : kind === "username" ? "username" : secureInput ? "password" : "none"}
       onChangeText={onValueChange}
       placeholderTextColor="#8E8E93"
+      testID={testID}
       style={[
         {
           minHeight: multiline ? 76 : 44,

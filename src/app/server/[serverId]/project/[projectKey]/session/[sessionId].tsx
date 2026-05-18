@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, View } from "react-native";
+import { useMemo, useState } from "react";
+import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Message, Provider, SessionStatus } from "@opencode-ai/sdk/v2/client";
 import { MessageBubble } from "@/components/message-part-view";
+import { HeaderAction } from "@/components/header-action";
 import { NativeButton, NativeTextField } from "@/components/native-control";
 import { AppText, Card, EmptyState, LoadingState, Pill, useTheme } from "@/components/surface";
 import { createAscendingId } from "@/lib/ids";
@@ -25,7 +26,6 @@ import { useServers } from "@/store/servers";
 export default function SessionThreadScreen() {
   const theme = useTheme();
   const queryClient = useQueryClient();
-  const scrollRef = useRef<ScrollView>(null);
   const { serverId, projectKey, sessionId } = useLocalSearchParams<{
     serverId: string;
     projectKey: string;
@@ -66,20 +66,16 @@ export default function SessionThreadScreen() {
   });
 
   const sortedMessages = useMemo(
-    () => (messages.data ?? []).slice().sort((a, b) => (a.info.id < b.info.id ? -1 : a.info.id > b.info.id ? 1 : 0)),
+    () =>
+      (messages.data ?? [])
+        .slice()
+        .sort((a, b) => a.info.time.created - b.info.time.created || (a.info.id < b.info.id ? -1 : a.info.id > b.info.id ? 1 : 0)),
     [messages.data],
   );
+  const latestFirstMessages = useMemo(() => sortedMessages.slice().reverse(), [sortedMessages]);
   const sessionStatus = status.data?.[sessionId];
   const working = sessionWorking(sessionStatus);
   const providersList = providers.data?.providers as Provider[] | undefined;
-  const contentVersion = sortedMessages
-    .flatMap((item) => [item.info.id, String(item.info.time.created), ...item.parts.map((part) => `${part.id}:${part.type}:${"text" in part ? part.text.length : ""}`)])
-    .join("|");
-
-  useEffect(() => {
-    const timer = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
-    return () => clearTimeout(timer);
-  }, [contentVersion, working]);
 
   const share = useMutation({
     mutationFn: async () => {
@@ -147,57 +143,66 @@ export default function SessionThreadScreen() {
   if (!server || !directory || !client) return <LoadingState title="Opening thread" />;
 
   const title = sessionTitle(session.data);
+  const sessionSummary = (
+    <Card>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
+        <View style={{ flex: 1, gap: 4 }}>
+          <AppText variant="headline">{title}</AppText>
+          <AppText variant="caption" color={theme.muted} selectable>
+            {filename(directory)} / {sessionId}
+          </AppText>
+        </View>
+        <View style={{ alignItems: "flex-end", gap: 8 }}>
+          {working ? <Pill tone="warning">Working</Pill> : <Pill>Idle</Pill>}
+          <NativeButton
+            title={session.data?.share?.url ? "Unshare" : "Share"}
+            icon={session.data?.share?.url ? "unshare" : "share"}
+            disabled={share.isPending || !session.data}
+            onPress={() => share.mutate()}
+            testID={session.data?.share?.url ? "unshare-session-button" : "share-session-button"}
+            variant="plain"
+          />
+        </View>
+      </View>
+      {session.data ? (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          <Pill>{`Updated ${formatRelativeTime(session.data.time.updated)}`}</Pill>
+          {session.data.agent ? <Pill tone="accent">{session.data.agent}</Pill> : null}
+          {session.data.share?.url ? <Pill tone="success">Shared</Pill> : null}
+        </View>
+      ) : null}
+    </Card>
+  );
 
   return (
     <>
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: theme.background }}>
-        <ScrollView
-          ref={scrollRef}
+        <FlatList
+          data={latestFirstMessages}
+          inverted
+          keyExtractor={(item) => item.info.id}
+          renderItem={({ item }) => <MessageBubble message={item.info} parts={item.parts} providers={providersList} />}
           style={{ flex: 1 }}
           contentInsetAdjustmentBehavior="automatic"
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 20 }}
-        >
-          <Card>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
-              <View style={{ flex: 1, gap: 4 }}>
-                <AppText variant="headline">{title}</AppText>
-                <AppText variant="caption" color={theme.muted} selectable>
-                  {filename(directory)} / {sessionId}
-                </AppText>
-              </View>
-              {working ? <Pill tone="warning">Working</Pill> : <Pill>Idle</Pill>}
-            </View>
-            {session.data ? (
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                <Pill>{`Updated ${formatRelativeTime(session.data.time.updated)}`}</Pill>
-                {session.data.agent ? <Pill tone="accent">{session.data.agent}</Pill> : null}
-                {session.data.share?.url ? <Pill tone="success">Shared</Pill> : null}
-              </View>
-            ) : null}
-          </Card>
-
-          {messages.isPending ? (
-            <LoadingState title="Loading thread" />
-          ) : messages.error ? (
-            <EmptyState title="Could not load messages" detail={messages.error instanceof Error ? messages.error.message : "Request failed"} />
-          ) : sortedMessages.length ? (
-            <View style={{ gap: 14 }}>
-              {sortedMessages.map((item) => (
-                <MessageBubble key={item.info.id} message={item.info} parts={item.parts} providers={providersList} />
-              ))}
-            </View>
-          ) : (
-            <EmptyState title="Empty thread" detail="Send a prompt to start this session." />
-          )}
-
-          {working ? (
+          ListHeaderComponent={working ? (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 4 }}>
               <ActivityIndicator color={theme.accent} />
               <AppText color={theme.muted}>opencode is thinking or running tools</AppText>
             </View>
           ) : null}
-        </ScrollView>
+          ListEmptyComponent={
+            messages.isPending ? (
+              <LoadingState title="Loading thread" />
+            ) : messages.error ? (
+              <EmptyState title="Could not load messages" detail={messages.error instanceof Error ? messages.error.message : "Request failed"} />
+            ) : (
+              <EmptyState title="Empty thread" detail="Send a prompt to start this session." />
+            )
+          }
+          ListFooterComponent={sessionSummary}
+        />
 
         <View
           style={{
@@ -214,6 +219,8 @@ export default function SessionThreadScreen() {
             key={composerKey}
             multiline
             placeholder="Message opencode"
+            accessibilityLabel="Message opencode"
+            testID="message-composer"
             kind="message"
             onValueChange={setPrompt}
             style={{ alignSelf: "stretch", minHeight: 72 }}
@@ -228,6 +235,7 @@ export default function SessionThreadScreen() {
                 title={send.isPending ? "Sending" : "Send"}
                 icon="send"
                 variant="primary"
+                testID="send-message"
                 disabled={send.isPending || (!prompt.trim() && !working)}
                 onPress={() => {
                   if (!prompt.trim() && working) abort.mutate();
@@ -242,12 +250,12 @@ export default function SessionThreadScreen() {
         options={{
           title,
           headerRight: () => (
-            <NativeButton
+            <HeaderAction
               title={session.data?.share?.url ? "Unshare" : "Share"}
               icon={session.data?.share?.url ? "unshare" : "share"}
-              variant="plain"
               disabled={share.isPending || !session.data}
               onPress={() => share.mutate()}
+              testID={session.data?.share?.url ? "unshare-session-header-button" : "share-session-header-button"}
             />
           ),
         }}

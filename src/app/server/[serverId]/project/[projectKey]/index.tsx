@@ -2,56 +2,15 @@ import { useMemo, useState } from "react";
 import { Alert, RefreshControl, ScrollView, View } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Project, SessionStatus } from "@opencode-ai/sdk/v2/client";
+import type { SessionStatus } from "@opencode-ai/sdk/v2/client";
+import { HeaderAction } from "@/components/header-action";
 import { NativeButton, NativeTextField } from "@/components/native-control";
 import { AppText, EmptyState, LoadingState, Pill, Row, SectionHeader, useTheme } from "@/components/surface";
 import { createOpencodeSdk } from "@/lib/opencode-client";
 import { filename, formatRelativeTime, projectDisplayName, sessionTitle, sessionWorking } from "@/lib/opencode-format";
 import { opencodeKeys } from "@/lib/opencode-queries";
-import { decodeRouteValue, encodeRouteValue } from "@/lib/route-params";
+import { decodeRouteValue } from "@/lib/route-params";
 import { useServers } from "@/store/servers";
-
-function ProjectRail({ serverId, currentDirectory, projects }: { serverId: string; currentDirectory: string; projects: Project[] }) {
-  const theme = useTheme();
-
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 16 }}>
-      {projects.map((project) => {
-        const selected = project.worktree === currentDirectory;
-
-        return (
-          <Row
-            key={project.id}
-            onPress={() =>
-              router.replace({
-                pathname: "/server/[serverId]/project/[projectKey]",
-                params: { serverId, projectKey: encodeRouteValue(project.worktree) },
-              })
-            }
-            style={{
-              minWidth: 112,
-              maxWidth: 160,
-              padding: 12,
-              gap: 6,
-              borderRadius: 16,
-              borderCurve: "continuous",
-              borderWidth: 1,
-              borderColor: selected ? theme.accent : theme.border,
-              backgroundColor: selected ? `${theme.accent}22` : theme.card,
-            }}
-          >
-            <AppText variant="headline" numberOfLines={1} style={{ fontSize: 15 }}>
-              {projectDisplayName(project)}
-            </AppText>
-            <AppText variant="caption" color={theme.muted} numberOfLines={1}>
-              {filename(project.worktree)}
-            </AppText>
-          </Row>
-        );
-      })}
-    </ScrollView>
-  );
-}
 
 export default function ProjectSessionsScreen() {
   const theme = useTheme();
@@ -117,14 +76,22 @@ export default function ProjectSessionsScreen() {
         refreshControl={<RefreshControl refreshing={sessions.isRefetching || projects.isRefetching} onRefresh={refresh} />}
         contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: 48 }}
       >
-        {projects.data?.length ? <ProjectRail serverId={server.id} currentDirectory={directory} projects={projects.data} /> : null}
-
         <Row>
-          <View style={{ gap: 4 }}>
-            <AppText variant="title">{project ? projectDisplayName(project) : filename(directory)}</AppText>
-            <AppText variant="caption" color={theme.muted} selectable>
-              {directory}
-            </AppText>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+            <View style={{ flex: 1, gap: 4 }}>
+              <AppText variant="title">{project ? projectDisplayName(project) : filename(directory)}</AppText>
+              <AppText variant="caption" color={theme.muted} selectable>
+                {directory}
+              </AppText>
+            </View>
+            <NativeButton
+              title={createSession.isPending ? "Creating" : "New"}
+              icon="add"
+              disabled={createSession.isPending}
+              onPress={() => createSession.mutate()}
+              testID="new-session-button"
+              variant="primary"
+            />
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {project?.vcs ? <Pill>{project.vcs}</Pill> : null}
@@ -149,6 +116,8 @@ export default function ProjectSessionsScreen() {
               return (
                 <Row
                   key={session.id}
+                  accessibilityLabel={sessionTitle(session)}
+                  testID={`session-row-${session.id}`}
                   onPress={() =>
                     router.push({
                       pathname: "/server/[serverId]/project/[projectKey]/session/[sessionId]",
@@ -183,12 +152,12 @@ export default function ProjectSessionsScreen() {
         options={{
           title: project ? projectDisplayName(project) : filename(directory),
           headerRight: () => (
-            <NativeButton
+            <HeaderAction
               title={createSession.isPending ? "Creating" : "New"}
               icon="add"
-              variant="plain"
               disabled={createSession.isPending}
               onPress={() => createSession.mutate()}
+              testID="new-session-header-button"
             />
           ),
         }}
