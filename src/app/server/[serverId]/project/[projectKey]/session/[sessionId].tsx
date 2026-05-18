@@ -1,20 +1,20 @@
 import { useMemo, useState } from "react";
+import { GlassView } from "expo-glass-effect";
 import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, View } from "react-native";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { Host, Menu, Button } from "@expo/ui/swift-ui";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Message, Provider, SessionStatus } from "@opencode-ai/sdk/v2/client";
 import { MessageBubble } from "@/components/message-part-view";
 import { HeaderAction } from "@/components/header-action";
 import { NativeButton, NativeTextField } from "@/components/native-control";
-import { AppText, Card, EmptyState, LoadingState, Pill, useTheme } from "@/components/surface";
+import { AppText, EmptyState, LoadingState, useTheme } from "@/components/surface";
 import { createAscendingId } from "@/lib/ids";
 import { createOpencodeSdk } from "@/lib/opencode-client";
 import {
   chooseDefaultAgent,
   chooseDefaultModel,
   errorMessage,
-  filename,
-  formatRelativeTime,
   sessionTitle,
   sessionWorking,
   type MessageWithParts,
@@ -23,9 +23,10 @@ import { opencodeKeys, upsertMessage } from "@/lib/opencode-queries";
 import { decodeRouteValue } from "@/lib/route-params";
 import { useServers } from "@/store/servers";
 
-export default function SessionThreadScreen() {
-  const theme = useTheme();
-  const queryClient = useQueryClient();
+  export default function SessionThreadScreen() {
+    const theme = useTheme();
+    const router = useRouter();
+    const queryClient = useQueryClient();
   const { serverId, projectKey, sessionId } = useLocalSearchParams<{
     serverId: string;
     projectKey: string;
@@ -37,6 +38,8 @@ export default function SessionThreadScreen() {
   const client = server ? createOpencodeSdk(server, { directory }) : undefined;
   const [prompt, setPrompt] = useState("");
   const [composerKey, setComposerKey] = useState(0);
+  const [showThinking, setShowThinking] = useState(false);
+  const [showToolCalls, setShowToolCalls] = useState(false);
 
   const session = useQuery({
     queryKey: opencodeKeys.session(serverId, directory, sessionId),
@@ -143,49 +146,80 @@ export default function SessionThreadScreen() {
   if (!server || !directory || !client) return <LoadingState title="Opening thread" />;
 
   const title = sessionTitle(session.data);
-  const sessionSummary = (
-    <Card>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 12 }}>
-        <View style={{ flex: 1, gap: 4 }}>
-          <AppText variant="headline">{title}</AppText>
-          <AppText variant="caption" color={theme.muted} selectable>
-            {filename(directory)} / {sessionId}
-          </AppText>
-        </View>
-        <View style={{ alignItems: "flex-end", gap: 8 }}>
-          {working ? <Pill tone="warning">Working</Pill> : <Pill>Idle</Pill>}
+  const headerFloat = (
+    <View style={{ position: "absolute", top: 60, left: 16, right: 16, flexDirection: "row", justifyContent: "space-between", zIndex: 100 }}>
+      {/* Top Left: Sidebar / Back Toggle */}
+      <GlassView glassEffectStyle="regular" style={{ borderRadius: 24, overflow: "hidden" }}>
+        <View style={{ paddingHorizontal: 14, paddingVertical: 10 }}>
           <NativeButton
-            title={session.data?.share?.url ? "Unshare" : "Share"}
-            icon={session.data?.share?.url ? "unshare" : "share"}
-            disabled={share.isPending || !session.data}
-            onPress={() => share.mutate()}
-            testID={session.data?.share?.url ? "unshare-session-button" : "share-session-button"}
+            title=""
+            icon="chevronLeft"
             variant="plain"
+            onPress={() => router.back()}
           />
         </View>
-      </View>
-      {session.data ? (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          <Pill>{`Updated ${formatRelativeTime(session.data.time.updated)}`}</Pill>
-          {session.data.agent ? <Pill tone="accent">{session.data.agent}</Pill> : null}
-          {session.data.share?.url ? <Pill tone="success">Shared</Pill> : null}
+      </GlassView>
+
+      {/* Top Right: New & Actions */}
+      <GlassView glassEffectStyle="regular" style={{ borderRadius: 24, overflow: "hidden" }}>
+        <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 8, gap: 12 }}>
+          <NativeButton
+            title=""
+            icon="add"
+            variant="plain"
+            onPress={() => router.replace("/")}
+          />
+          <Host matchContents>
+            <Menu
+              label=" "
+              systemImage="ellipsis"
+            >
+              <Button
+                label={session.data?.share?.url ? "Unshare" : "Share"}
+                systemImage={session.data?.share?.url ? "xmark" : "square.and.arrow.up"}
+                onPress={() => share.mutate()}
+              />
+              <Button
+                label={showThinking ? "Hide thinking" : "Show thinking"}
+                systemImage={showThinking ? "eye.slash" : "eye"}
+                onPress={() => setShowThinking(!showThinking)}
+              />
+              <Button
+                label={showToolCalls ? "Hide tool details" : "Show tool details"}
+                systemImage={showToolCalls ? "hammer" : "hammer.fill"}
+                onPress={() => setShowToolCalls(!showToolCalls)}
+              />
+              <Button
+                label="Delete"
+                systemImage="trash"
+                role="destructive"
+                onPress={() => Alert.alert("Not implemented")}
+              />
+            </Menu>
+          </Host>
         </View>
-      ) : null}
-    </Card>
+      </GlassView>
+    </View>
   );
 
   return (
     <>
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1, backgroundColor: theme.background }}>
+        <View style={{ flex: 1 }}>
+          <Stack.Screen
+          options={{
+            headerShown: false,
+          }}
+        />
         <FlatList
           data={latestFirstMessages}
           inverted
           keyExtractor={(item) => item.info.id}
-          renderItem={({ item }) => <MessageBubble message={item.info} parts={item.parts} providers={providersList} />}
+          renderItem={({ item }) => <MessageBubble message={item.info} parts={item.parts} providers={providersList} showThinking={showThinking} showToolCalls={showToolCalls} />}
           style={{ flex: 1 }}
           contentInsetAdjustmentBehavior="automatic"
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 20 }}
+          contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 150, paddingTop: 180 }}
           ListHeaderComponent={working ? (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 4 }}>
               <ActivityIndicator color={theme.accent} />
@@ -201,49 +235,60 @@ export default function SessionThreadScreen() {
               <EmptyState title="Empty thread" detail="Send a prompt to start this session." />
             )
           }
-          ListFooterComponent={sessionSummary}
         />
-
-        <View
-          style={{
-            borderTopWidth: 1,
-            borderColor: theme.border,
-            backgroundColor: theme.card,
-            paddingHorizontal: 12,
-            paddingTop: 10,
-            paddingBottom: 18,
-            gap: 10,
-          }}
-        >
-          <NativeTextField
-            key={composerKey}
-            multiline
-            placeholder="Message opencode"
-            accessibilityLabel="Message opencode"
-            testID="message-composer"
-            kind="message"
-            onValueChange={setPrompt}
-            style={{ alignSelf: "stretch", minHeight: 72 }}
-          />
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-            <AppText variant="caption" color={theme.muted}>
-              {chooseDefaultAgent(agents.data)?.name ?? session.data?.agent ?? "Default agent"}
-            </AppText>
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              {working ? <NativeButton title="Stop" icon="stop" variant="destructive" disabled={abort.isPending} onPress={() => abort.mutate()} /> : null}
-              <NativeButton
-                title={send.isPending ? "Sending" : "Send"}
-                icon="send"
-                variant="primary"
-                testID="send-message"
-                disabled={send.isPending || (!prompt.trim() && !working)}
-                onPress={() => {
-                  if (!prompt.trim() && working) abort.mutate();
-                  else send.mutate(prompt);
-                }}
+        {headerFloat}
+        <View style={{ position: "absolute", bottom: 40, left: 16, right: 16, zIndex: 100 }}>
+          <GlassView
+            style={{
+              borderRadius: 28,
+              overflow: "hidden",
+              borderWidth: 1,
+              borderColor: `${theme.border}44`,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.1,
+              shadowRadius: 12,
+            }}
+            glassEffectStyle="regular"
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                gap: 8,
+              }}
+            >
+              <NativeTextField
+                key={composerKey}
+                multiline
+                variant="plain"
+                placeholder="Message opencode"
+                accessibilityLabel="Message opencode"
+                testID="message-composer"
+                kind="message"
+                onValueChange={setPrompt}
+                style={{ flex: 1 }}
               />
+              {working ? (
+                <NativeButton title="" icon="stop" variant="plain" disabled={abort.isPending} onPress={() => abort.mutate()} />
+              ) : (
+                <NativeButton
+                  title=""
+                  icon="send"
+                  variant="plain"
+                  testID="send-message"
+                  disabled={send.isPending || (!prompt.trim() && !working)}
+                  onPress={() => {
+                    if (!prompt.trim() && working) abort.mutate();
+                    else send.mutate(prompt);
+                  }}
+                />
+              )}
             </View>
-          </View>
+          </GlassView>
+        </View>
         </View>
       </KeyboardAvoidingView>
       <Stack.Screen

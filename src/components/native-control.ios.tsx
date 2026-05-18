@@ -13,9 +13,16 @@ import {
   textContentType,
   textFieldStyle,
   textInputAutocapitalization,
+  labelStyle,
 } from "@expo/ui/swift-ui/modifiers";
 
-export type NativeButtonIcon = "add" | "collapse" | "expand" | "refresh" | "remove" | "send" | "share" | "stop" | "unshare";
+export type NativeButtonIcon = "add" | "collapse" | "expand" | "refresh" | "remove" | "send" | "share" | "stop" | "unshare" | "sidebar" | "ellipsis"   | "chevronLeft"
+  | "sidebar"
+  | "ellipsis"
+  | "eye"
+  | "eye.slash"
+  | "hammer"
+  | "hammer.fill";
 
 type NativeTextFieldKind = "message" | "password" | "search" | "text" | "url" | "username";
 
@@ -37,6 +44,7 @@ type NativeTextFieldProps = {
   autoFocus?: boolean;
   secure?: boolean;
   kind?: NativeTextFieldKind;
+  variant?: "default" | "plain";
   multiline?: boolean;
   autoCorrect?: boolean;
   onValueChange?: (value: string) => void;
@@ -63,6 +71,13 @@ const buttonIcons = {
   share: "square.and.arrow.up",
   stop: "stop.fill",
   unshare: "xmark",
+  sidebar: "sidebar.left",
+  ellipsis: "ellipsis",
+  chevronLeft: "chevron.left",
+  eye: "eye",
+  "eye.slash": "eye.slash",
+  hammer: "hammer",
+  "hammer.fill": "hammer.fill",
 } satisfies Record<NativeButtonIcon, ButtonProps["systemImage"]>;
 
 export function NativeHost({
@@ -83,16 +98,26 @@ export function NativeHost({
 
 export function NativeButton({ title, icon, accessibilityLabel, variant = "secondary", disabled: isDisabled, onPress, style, testID }: NativeButtonProps) {
   const styleName = variant === "primary" ? "borderedProminent" : variant === "plain" ? "plain" : "bordered";
+  const modifiers = [
+    buttonStyle(styleName),
+    controlSize("regular"),
+    disabled(!!isDisabled),
+    nativeAccessibilityLabel(accessibilityLabel ?? title),
+  ];
+
+  if (!title && icon) {
+    modifiers.push(labelStyle("iconOnly"));
+  }
 
   return (
     <NativeHost style={style}>
       <Button
-        label={title}
+        label={title || " "}
         systemImage={icon ? buttonIcons[icon] : undefined}
         role={variant === "destructive" ? "destructive" : "default"}
         onPress={isDisabled ? undefined : onPress}
         testID={testID}
-        modifiers={[buttonStyle(styleName), controlSize("regular"), disabled(!!isDisabled), nativeAccessibilityLabel(accessibilityLabel ?? title)]}
+        modifiers={modifiers}
       />
     </NativeHost>
   );
@@ -121,6 +146,7 @@ export function NativeTextField({
   autoFocus,
   secure,
   kind = "text",
+  variant = "default",
   multiline,
   autoCorrect = false,
   onValueChange,
@@ -129,7 +155,7 @@ export function NativeTextField({
 }: NativeTextFieldProps) {
   const secureInput = secure || kind === "password";
   const modifiers = [
-    textFieldStyle("roundedBorder"),
+    textFieldStyle(variant === "plain" ? "plain" : "roundedBorder"),
     autocorrectionDisabled(!autoCorrect),
     textInputAutocapitalization("never"),
     submitLabel(kind === "search" ? "search" : kind === "message" ? "send" : "done"),
@@ -145,7 +171,7 @@ export function NativeTextField({
     modifiers.push(textContentType("password"));
   }
   if (multiline) {
-    modifiers.push(lineLimit({ min: 2, max: 6 }));
+    modifiers.push(lineLimit({ min: 1, max: 6 }));
   }
   if (accessibilityLabel) {
     modifiers.push(nativeAccessibilityLabel(accessibilityLabel));

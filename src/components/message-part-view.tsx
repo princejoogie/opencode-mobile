@@ -1,9 +1,82 @@
-import { useState } from "react";
-import { Text, View } from "react-native";
-import type { Message, Part, Provider, ToolState } from "@opencode-ai/sdk/v2/client";
+import { useEffect, useState } from "react";
+import { Text, View, Pressable, Modal, Image, ScrollView, StyleSheet } from "react-native";
+import { SymbolView } from "expo-symbols";
+import { BlurView } from "expo-blur";
+import type { Message, Part, Provider, ToolState, FilePart } from "@opencode-ai/sdk/v2/client";
 import { NativeButton } from "./native-control";
 import { AppText, Card, Pill, useTheme } from "./surface";
-import { formatDateTime, providerModelName } from "@/lib/opencode-format";
+
+function FilePartView({ part }: { part: FilePart }) {
+  const theme = useTheme();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [textContent, setTextContent] = useState<string | null>(null);
+
+  const sourcePath = part.source && "path" in part.source ? part.source.path : undefined;
+  const fileName = part.filename || sourcePath || "File";
+  const isImage = part.mime.startsWith("image/");
+  const iconName = isImage ? "photo" : "doc.text";
+
+  useEffect(() => {
+    if (modalVisible && !isImage && part.url) {
+      if (part.url.startsWith("data:")) {
+        try {
+          const base64Data = part.url.split(",")[1];
+          if (base64Data) {
+            // Very naive base64 decode for text, might not handle utf-8 perfectly but enough for basic preview
+            const decoded = atob(base64Data);
+            setTextContent(decoded);
+          }
+        } catch {
+          setTextContent("Failed to decode file content.");
+        }
+      } else {
+        fetch(part.url)
+          .then((res) => res.text())
+          .then(setTextContent)
+          .catch(() => setTextContent("Failed to fetch file content."));
+      }
+    }
+  }, [modalVisible, isImage, part.url]);
+
+  return (
+    <>
+      <Pressable 
+        onPress={() => setModalVisible(true)}
+        style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: theme.card, paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12, borderWidth: 1, borderColor: theme.border, alignSelf: "flex-start" }}
+      >
+        <SymbolView name={iconName} size={14} tintColor={theme.muted} />
+        <AppText variant="caption" style={{ fontSize: 13, color: theme.text }} numberOfLines={1}>{fileName}</AppText>
+      </Pressable>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={{ flex: 1, justifyContent: "flex-end" }}>
+          <Pressable style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={() => setModalVisible(false)} />
+          <BlurView intensity={90} tint={theme.dark ? "dark" : "light"} style={{ borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden', padding: 24, paddingBottom: 48, minHeight: 300, maxHeight: '85%' }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <AppText variant="headline" numberOfLines={1} style={{ flex: 1, marginRight: 16 }}>{fileName}</AppText>
+              <Pressable onPress={() => setModalVisible(false)} style={{ padding: 6, backgroundColor: theme.card, borderRadius: 16, borderWidth: 1, borderColor: theme.border }}>
+                <SymbolView name="xmark" size={14} tintColor={theme.text} />
+              </Pressable>
+            </View>
+            
+            {isImage ? (
+              <Image source={{ uri: part.url }} style={{ width: '100%', height: 400, resizeMode: 'contain', borderRadius: 12 }} />
+            ) : (
+              <ScrollView style={{ backgroundColor: theme.card, borderRadius: 12, padding: 12, borderColor: theme.border, borderWidth: 1 }}>
+                <AppText style={{ fontSize: 13, fontFamily: "GeistMono" }}>{textContent || "Loading..."}</AppText> 
+              </ScrollView>
+            )}
+          </BlurView>
+        </View>
+      </Modal>
+    </>
+  );
+}
 
 function compactJSON(value: unknown) {
   if (value === undefined || value === null) return "";
@@ -23,11 +96,18 @@ function statusTone(status: ToolState["status"]) {
   return "neutral" as const;
 }
 
-function PartView({ part }: { part: Part }) {
+function PartView({ part, isUser }: { part: Part; isUser?: boolean }) {
   const theme = useTheme();
   const [expanded, setExpanded] = useState(part.type === "text");
 
   if (part.type === "text") {
+    if (isUser) {
+      return (
+        <AppText selectable style={{ fontSize: 15, lineHeight: 23 }}>
+          {part.text || " "}
+        </AppText>
+      );
+    }
     return (
       <AppText selectable style={{ fontSize: 15, lineHeight: 23 }}>
         {part.text || " "}
@@ -39,9 +119,11 @@ function PartView({ part }: { part: Part }) {
     return (
       <Card style={{ backgroundColor: theme.elevated, padding: 12 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <AppText variant="headline" color={theme.purple}>
-            Thinking
-          </AppText>
+          <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <AppText variant="headline" color={theme.purple}>
+              Thinking
+            </AppText>
+          </View>
           <NativeButton title={expanded ? "Hide" : "Show"} icon={expanded ? "collapse" : "expand"} variant="plain" onPress={() => setExpanded((value) => !value)} />
         </View>
         {expanded ? (
@@ -80,32 +162,13 @@ function PartView({ part }: { part: Part }) {
             {output}
           </Text>
         ) : null}
-        {(input || output) && !expanded ? <NativeButton title="Show full tool call" icon="expand" variant="plain" onPress={() => setExpanded(true)} /> : null}
+        {(input || output) ? <NativeButton title={expanded ? "Hide tool call" : "Show full tool call"} icon={expanded ? "collapse" : "expand"} variant="plain" onPress={() => setExpanded(!expanded)} /> : null}
       </Card>
     );
   }
 
   if (part.type === "file") {
-    const sourcePath = part.source && "path" in part.source ? part.source.path : undefined;
-
-    return (
-      <Card style={{ padding: 12 }}>
-        <AppText variant="headline">{part.filename || sourcePath || "File"}</AppText>
-        <AppText variant="caption" color={theme.muted} selectable>
-          {part.mime} {part.url}
-        </AppText>
-      </Card>
-    );
-  }
-
-  if (part.type === "step-finish") {
-    return (
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        <Pill>{part.reason}</Pill>
-        <Pill>{`$${part.cost.toFixed(4)}`}</Pill>
-        <Pill>{`${part.tokens.input + part.tokens.output} tokens`}</Pill>
-      </View>
-    );
+    return <FilePartView part={part} />;
   }
 
   if (part.type === "subtask") {
@@ -117,56 +180,63 @@ function PartView({ part }: { part: Part }) {
     );
   }
 
-  if (part.type === "agent") return <Pill tone="accent">Agent {part.name}</Pill>;
-  if (part.type === "retry") return <Pill tone="warning">Retry {part.attempt}</Pill>;
-  if (part.type === "compaction") return <Pill tone="warning">Compaction</Pill>;
-  if (part.type === "snapshot") return <Pill>Snapshot</Pill>;
-  if (part.type === "patch") return <Pill>{`${part.files.length} changed files`}</Pill>;
-  if (part.type === "step-start") return <Pill>Step started</Pill>;
+  if (part.type === "step-finish" || part.type === "step-start" || part.type === "agent" || part.type === "retry" || part.type === "compaction" || part.type === "snapshot" || part.type === "patch") {
+    return null;
+  }
 
   return null;
 }
 
-export function MessageBubble({ message, parts, providers }: { message: Message; parts: Part[]; providers?: Provider[] }) {
+export function MessageBubble({ message, parts, providers, showThinking, showToolCalls }: { message: Message; parts: Part[]; providers?: Provider[]; showThinking?: boolean; showToolCalls?: boolean }) {
   const theme = useTheme();
-  const isUser = message.role === "user";
-  const modelName =
-    message.role === "assistant"
-      ? providerModelName(providers, message.providerID, message.modelID)
-      : providerModelName(providers, message.model.providerID, message.model.modelID);
+  const visibleParts = parts.filter((part) => {
+    if (part.type === "reasoning" && !showThinking) return false;
+    if (part.type === "tool" && !showToolCalls) return false;
+    if (part.type !== "text" && part.type !== "reasoning" && part.type !== "tool" && part.type !== "file" && part.type !== "subtask") return false;
+    return true;
+  });
+
+  if (message.role === "user") {
+    return (
+      <View style={{ alignItems: "flex-end", gap: 6 }}>
+        <View style={{ maxWidth: "88%" }}>
+          <Card
+            style={{
+              backgroundColor: `${theme.accent}22`,
+              borderColor: `${theme.accent}55`,
+            }}
+          >
+            {visibleParts.length === 0 ? (
+              <AppText color={theme.muted}>No content</AppText>
+            ) : (
+              <View style={{ gap: 10 }}>
+                {visibleParts.map((part) => (
+                  <PartView key={part.id} part={part} isUser />
+                ))}
+              </View>
+            )}
+          </Card>
+        </View>
+      </View>
+    );
+  }
+
+  if (visibleParts.length === 0 && !message.error) return null;
 
   return (
-    <View style={{ alignItems: isUser ? "flex-end" : "stretch", gap: 6 }}>
-      <View style={{ maxWidth: isUser ? "88%" : "100%", minWidth: isUser ? "40%" : undefined }}>
-        <Card
-          style={{
-            backgroundColor: isUser ? `${theme.accent}22` : theme.card,
-            borderColor: isUser ? `${theme.accent}55` : theme.border,
-          }}
-        >
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-            <Pill tone={isUser ? "accent" : "neutral"}>{isUser ? "You" : message.agent || "Assistant"}</Pill>
-            <AppText variant="caption" color={theme.muted}>
-              {formatDateTime(message.time.created)}
-            </AppText>
-          </View>
-          {modelName ? (
-            <AppText variant="caption" color={theme.subtle}>
-              {modelName}
-            </AppText>
-          ) : null}
-          {parts.length === 0 ? (
-            <AppText color={theme.muted}>{message.role === "assistant" && !message.time.completed ? "Thinking..." : "No content"}</AppText>
-          ) : (
-            <View style={{ gap: 10 }}>
-              {parts.map((part) => (
-                <PartView key={part.id} part={part} />
-              ))}
-            </View>
-          )}
-          {message.role === "assistant" && message.error ? <Pill tone="danger">{message.error.name}</Pill> : null}
-        </Card>
-      </View>
+    <View style={{ alignItems: "stretch", gap: 8 }}>
+      {visibleParts.length > 0 ? (
+        <View style={{ gap: 10 }}>
+          {visibleParts.map((part) => (
+            <PartView key={part.id} part={part} />
+          ))}
+        </View>
+      ) : null}
+      {message.error ? (
+        <View style={{ alignSelf: "flex-start" }}>
+          <Pill tone="danger">{message.error.name}</Pill>
+        </View>
+      ) : null}
     </View>
   );
 }

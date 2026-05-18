@@ -1,7 +1,13 @@
 import type { ReactElement, ReactNode } from "react";
 import { Pressable, Text, TextInput, View, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 
-export type NativeButtonIcon = "add" | "collapse" | "expand" | "refresh" | "remove" | "send" | "share" | "stop" | "unshare";
+export type NativeButtonIcon = "add" | "collapse" | "expand" | "refresh" | "remove" | "send" | "share" | "stop" | "unshare" | "sidebar" | "ellipsis"   | "chevronLeft"
+  | "sidebar"
+  | "ellipsis"
+  | "eye"
+  | "eye.slash"
+  | "hammer"
+  | "hammer.fill";
 
 type NativeTextFieldKind = "message" | "password" | "search" | "text" | "url" | "username";
 
@@ -23,6 +29,7 @@ type NativeTextFieldProps = {
   autoFocus?: boolean;
   secure?: boolean;
   kind?: NativeTextFieldKind;
+  variant?: "default" | "plain";
   multiline?: boolean;
   autoCorrect?: boolean;
   onValueChange?: (value: string) => void;
@@ -85,6 +92,7 @@ export function NativeTextField({
   autoFocus,
   secure,
   kind = "text",
+  variant = "default",
   multiline,
   autoCorrect = false,
   onValueChange,
@@ -113,12 +121,13 @@ export function NativeTextField({
       style={[
         {
           minHeight: multiline ? 76 : 44,
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: "#D1D1D6",
+          borderRadius: variant === "plain" ? 0 : 12,
+          borderWidth: variant === "plain" ? 0 : 1,
+          borderColor: variant === "plain" ? "transparent" : "#D1D1D6",
           paddingHorizontal: 12,
           paddingVertical: 10,
           color: "#11181C",
+          backgroundColor: "transparent",
         },
         style,
       ]}

@@ -42,7 +42,11 @@ export default function ProjectSessionsScreen() {
   const project = projects.data?.find((item) => item.worktree === directory);
   const filteredSessions = useMemo(() => {
     const value = search.trim().toLowerCase();
-    const list = (sessions.data ?? []).filter((session) => !session.time.archived);
+    const list = (sessions.data ?? [])
+      .filter((session) => !session.time.archived)
+      .map((session, index) => ({ session, index }))
+      .sort((a, b) => b.session.time.updated - a.session.time.updated || a.index - b.index)
+      .map((item) => item.session);
     if (!value) return list;
     return list.filter((session) => sessionTitle(session).toLowerCase().includes(value));
   }, [search, sessions.data]);

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { RefreshControl, ScrollView, View } from "react-native";
 import { Stack, router, useLocalSearchParams } from "expo-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -28,6 +29,14 @@ export default function ServerProjectsScreen() {
     enabled: !!server,
     queryFn: () => createOpencodeSdk(server!).project.list().then((result) => result.data ?? []),
   });
+  const sortedProjects = useMemo(
+    () =>
+      (projects.data ?? [])
+        .map((project, index) => ({ project, index }))
+        .sort((a, b) => b.project.time.updated - a.project.time.updated || a.index - b.index)
+        .map((item) => item.project),
+    [projects.data],
+  );
 
   if (!server) return <LoadingState title="Opening server" />;
 
@@ -59,14 +68,14 @@ export default function ServerProjectsScreen() {
           <AppText color={theme.muted}>Projects and sessions are loaded through `@opencode-ai/sdk/v2/client` with opencode directory scoping.</AppText>
         </Row>
 
-        <SectionHeader title="Projects" detail={`${projects.data?.length ?? 0}`} />
+        <SectionHeader title="Projects" detail={`${sortedProjects.length}`} />
         {projects.isPending ? (
           <LoadingState title="Loading projects" />
         ) : projects.error ? (
           <EmptyState title="Could not load projects" detail={projects.error instanceof Error ? projects.error.message : "The server returned an error."} />
-        ) : projects.data?.length ? (
+        ) : sortedProjects.length ? (
           <View style={{ gap: 12 }}>
-            {projects.data.map((project) => (
+            {sortedProjects.map((project) => (
               <Row
                 key={project.id}
                 accessibilityLabel={projectDisplayName(project)}

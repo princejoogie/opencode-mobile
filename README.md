@@ -1,50 +1,68 @@
-# Welcome to your Expo app 👋
+# opencode mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Expo Router React Native client for connecting to a running opencode server from iOS, Android, or web.
 
-## Get started
+## Prerequisites
 
-1. Install dependencies
+- Node.js and npm.
+- Xcode and an iOS simulator for local iOS development.
+- A running opencode server. From the project you want to control, run `opencode serve --hostname 0.0.0.0`, then add its URL in the app, for example `http://localhost:4096` on the iOS simulator or `http://<lan-ip>:4096` on a device.
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Install
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Run
 
-## Learn more
+Start Metro for the native app:
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+npx expo start --dev-client --host lan
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Build and launch the configured iOS simulator:
 
-## Join the community
+```bash
+/opt/homebrew/bin/xcodebuildmcp simulator build-and-run
+```
 
-Join our community of developers creating universal apps.
+The XcodeBuildMCP defaults live in `.xcodebuildmcp/config.yaml` and point at `ios/opencodemobile.xcworkspace`, scheme `opencodemobile`, and the `iPhone 17 Pro` simulator.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Other package scripts:
+
+```bash
+npm run ios
+npm run android
+npm run web
+```
+
+## Verify
+
+```bash
+npm run lint
+npx tsc --noEmit
+```
+
+After UI, JSX, native, Expo, or dependency changes, also run:
+
+```bash
+/opt/homebrew/bin/xcodebuildmcp simulator build-and-run
+```
+
+## Debugging
+
+- `xcodebuildmcp simulator build-and-run` prints build log, runtime log, and OSLog paths for failures or runtime investigation.
+- Inspect the visible accessibility tree with `/opt/homebrew/bin/xcodebuildmcp ui-automation snapshot-ui` before tapping in automated QA.
+- Prefer `/opt/homebrew/bin/xcodebuildmcp ui-automation tap --id "..."` or `--label "..."`; use coordinates only when the element is visible and stable.
+- Capture visual evidence with `/opt/homebrew/bin/xcodebuildmcp simulator screenshot --return-format path`; QA screenshots are kept under `.tmp/scs/`.
+
+## Architecture Notes
+
+- `src/app/_layout.tsx` is the Expo Router entrypoint; routes live in `src/app/`.
+- `src/store/servers.tsx` persists opencode server connections with `expo-secure-store`.
+- `src/lib/opencode-client.ts` creates the `@opencode-ai/sdk/v2/client` client and applies optional basic auth.
+- `src/hooks/use-opencode-events.ts` streams opencode events into React Query caches keyed by `src/lib/opencode-queries.ts`.
+- Project paths are encoded for routes through `src/lib/route-params.ts`; do not put raw filesystem paths directly in route params.
+- Native control wrappers live in `src/components/native-control.ios.tsx`, `src/components/native-control.android.tsx`, and `src/components/native-control.tsx`.
