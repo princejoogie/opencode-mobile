@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "react-native-reanimated";
 import { TerminalColors } from "@/constants/Colors";
 import { GlobalProvider } from "@/store/global";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const queryClient = new QueryClient();
 

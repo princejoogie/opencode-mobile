@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import { createContext, use, useState, type ReactNode } from "react";
 
 interface GlobalContextType {
   serverUrl: string;
@@ -8,7 +8,7 @@ interface GlobalContextType {
 const GlobalContext = createContext<GlobalContextType | null>(null);
 
 export const useGlobal = () => {
-  const context = useContext(GlobalContext);
+  const context = use(GlobalContext);
   if (!context) {
     throw new Error('useGlobal must be used within a GlobalProvider');
   }
@@ -16,15 +16,15 @@ export const useGlobal = () => {
 };
 
 interface GlobalProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export const GlobalProvider = ({ children }: GlobalProviderProps) => {
   const [serverUrl, setServerUrl] = useState("http://palkia:3000");
 
   return (
-    <GlobalContext.Provider value={{ serverUrl, setServerUrl }}>
+    <GlobalContext value={{ serverUrl, setServerUrl }}>
       {children}
-    </GlobalContext.Provider>
+    </GlobalContext>
   );
 };
